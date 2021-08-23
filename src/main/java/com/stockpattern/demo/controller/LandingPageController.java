@@ -52,30 +52,6 @@ public class LandingPageController {
 	Map<String, List<Float>> yearlyUnrealisedProfitMap = new ConcurrentHashMap<String, List<Float>>();
 
 	
-	@RequestMapping("/home")
-	public String getLandingPage(Model model) throws Exception
-	{
-		logger.info("STOCKPATTERN.......");
-		
-		String string = "Jan 17, 2011";	
-		DateFormat format = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
-		Date fromDate = format.parse(string);
-		
-		//model.addAttribute("stockPriceList", stockPatternStrategy.getMovingAverage(fromDate, 44));
-		
-		//model.addAttribute("stockPriceList", stockPatternStrategy.backTestMovingAverage("",fromDate, 44));
-		
-		//model.addAttribute("stockPriceList",stockPatternStrategy.backTestMovingAverage("ADANIPORTS",fromDate, 44));
-		
-		
-		
-		 
-		//allSymbolTXT(fromDate);
-		allSymbolCSV(null); 
-		
-		return "landingPage";
-	}
-	
 	@RequestMapping("/scale/{scale}/{symbol}/{sma}")
 	public String getLandingPage2(@PathVariable("scale") String scale,@PathVariable("symbol") String symbol,@PathVariable("sma") String sma,Model model) throws Exception
 	{
@@ -240,58 +216,6 @@ public class LandingPageController {
 		  
 		  //lines.forEach(l->logger.info(l));
 		  return lines;
-	}
-
-
-	private List<StockPrice> allSymbolCSV(Date fromDate) 
-	{
-		 String header ="Symbol|STOP LOSS COUNT|TARGET EXIT COUNT|TOTAL STOP LOSS AMOUNT|TOTAL TARGET EXIT AMOUNT| TOTAL P/L " ;
-		  
-		 //logger.info(header);
-		
-		 // String CSV_FILE_LOC = "C:\\Users\\ashis\\Downloads\\EOD_DATA\\archive-01\\data_1990_2020\\stock_data\\";
-		  String CSV_FILE_LOC = StockConstants.CSV_FILE_LOC;
-		  
-		  File[] files = new File(CSV_FILE_LOC).listFiles();
-		  
-		  for (File file : files)
-		  { 
-			  if (file.isFile()) 
-			  {
-		  
-				  String symbol = file.getName().replace(".csv", "");
-				  
-				  return stockPatternStrategy.backTestMovingAverage(symbol,fromDate, StockConstants.MOVING_AVERAGE_SCALE);
-		  
-			  } 
-		  }
-		  
-		  return null;
-	}
-	
-	
-	
-	private void allSymbolTXT(Date fromDate) 
-	{
-		String header ="Symbol|STOP LOSS COUNT|TARGET EXIT COUNT|TOTAL STOP LOSS AMOUNT|TOTAL TARGET EXIT AMOUNT| TOTAL P/L " ;
-		  
-		 // logger.info(header);
-		
-		 String TXT_FILE_LOC = "C:\\KeyStocks-Lite\\EOD\\data\\"; 
-		  
-		  File[] files = new File(TXT_FILE_LOC).listFiles();
-		  
-		  for (File file : files)
-		  { 
-			  if (file.isFile()) 
-			  {
-		  
-				  String symbol = file.getName().replace(".txt", "");
-				  
-				  stockPatternStrategy.backTestMovingAverage(symbol,fromDate, 44);
-		  
-			  } 
-		  }
 	}
 	
 }

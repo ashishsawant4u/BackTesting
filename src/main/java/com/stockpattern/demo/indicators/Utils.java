@@ -17,7 +17,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Ordering;
 import com.stockpattern.demo.models.StockPrice;
 
 public class Utils {
@@ -51,10 +50,16 @@ public class Utils {
 	   return beforeDate;
 	}  
 	
+	
+	/**
+	 * Prepare candles data for given symbol via CSV
+	 * 
+	 * @param instrument
+	 * @param fromDate
+	 * @return
+	 */
 	public static List<StockPrice>  getCandlesData(String instrument,Date fromDate)
-	{
-		//List<StockPrice> candleList = readUsingTextFile(instrument);
-		
+	{	
 		List<StockPrice> candleList = readUsingCSVFile(instrument);
 		
 		 
@@ -66,46 +71,15 @@ public class Utils {
 		 return candleList;
 	}
 	
-	/*
-	 * private static List<StockPrice> readUsingCSVFile (String instrument) { String
-	 * COMMA_DELIMITER = ","; List<StockPrice> candleList = new
-	 * ArrayList<StockPrice>(); String FILE_LOC =
-	 * "C:\\Users\\ashis\\Downloads\\EOD_DATA\\archive-01\\data_1990_2020\\stock_data\\";
-	 * int count = 0; try {
-	 * 
-	 * BufferedReader br = new BufferedReader(new
-	 * FileReader(FILE_LOC+instrument+".csv")); String line; while ((line =
-	 * br.readLine()) != null) {
-	 * 
-	 * if(count != 0) { String[] lineData = line.split(COMMA_DELIMITER);
-	 * 
-	 * Date currentDate = new SimpleDateFormat("yyyy-MM-dd").parse(lineData[0]);
-	 * 
-	 * StockPrice candle = new StockPrice(); candle.setSymbol(instrument);
-	 * candle.setMarketDate(currentDate);
-	 * candle.setOpenPrice(Float.parseFloat(lineData[4]));
-	 * candle.setHighPrice(Float.parseFloat(lineData[5]));
-	 * candle.setLowPrice(Float.parseFloat(lineData[6]));
-	 * candle.setClosePrice(Float.parseFloat(lineData[8]));
-	 * 
-	 * candleList.add(candle); }
-	 * 
-	 * count++;
-	 * 
-	 * }
-	 * 
-	 * 
-	 * } catch (Exception e) { System.out.println("Exception while reading CSV "+e);
-	 * }
-	 * 
-	 * return candleList; }
+	/**
+	 *  CSV reader to read candle data for given symbol
+	 * @param instrument
+	 * @return
 	 */
-	
 	private static List<StockPrice> readUsingCSVFile (String instrument)
 	{
 		String COMMA_DELIMITER = ",";
 		List<StockPrice> candleList = new ArrayList<StockPrice>();
-		//String FILE_LOC = "C:\\Users\\ashis\\Downloads\\EOD_DATA\\archive-01\\data_1990_2020\\stock_data\\";
 		String FILE_LOC = StockConstants.CSV_FILE_LOC;
 		int count = 0;
 		try 
@@ -145,39 +119,13 @@ public class Utils {
 		return candleList;
 	}
 
-	private static List<StockPrice> readUsingTextFile(String instrument) 
-	{
-		String fileName = "C:\\KeyStocks-Lite\\EOD\\data\\"+instrument+".txt";
-		
-		List<StockPrice> candleList = new ArrayList<StockPrice>();
-		
-		
-		 try {
-		        BufferedReader in = new BufferedReader(new FileReader(fileName));
-		        String str;
-
-		        while ((str = in.readLine())!= null) {
-		            String[] lineData = str.split(",");
-		            	Date currentDate = new SimpleDateFormat("yyyy-MM-dd").parse(lineData[0]);  
-		            
-		            	StockPrice candle = new StockPrice();
-		            	candle.setSymbol(instrument);
-		            	candle.setMarketDate(currentDate);
-		            	candle.setOpenPrice(Float.parseFloat(lineData[1]));
-		            	candle.setHighPrice(Float.parseFloat(lineData[2]));
-		            	candle.setLowPrice(Float.parseFloat(lineData[3]));
-		            	candle.setClosePrice(Float.parseFloat(lineData[4]));
-		            	
-		            	candleList.add(candle);	
-		            	
-		        }
-		        in.close();
-		    } catch (Exception e) {
-		        System.out.println("File Read Error");
-		    }
-		return candleList;
-	}
 	
+	/**
+	 * Set MA to all candles of the symbol
+	 * @param candlesData
+	 * @param averageScale = moving average
+	 * @return
+	 */
 	public static List<StockPrice>  getCandlesDataForGivenScale(List<StockPrice>  candlesData, int averageScale)
 	{
 		averageScale = averageScale-1;
@@ -199,6 +147,14 @@ public class Utils {
 		return candlesData;
 	}
 	
+	/**
+	 * get previous candles for given number of days before given candle
+	 * 
+	 * @param candleData
+	 * @param stockPriceWithMA
+	 * @param scale
+	 * @return
+	 */
 	public static List<StockPrice>  getCandlesForLastNosOfDayForInstrument(StockPrice candleData,List<StockPrice>  stockPriceWithMA,int scale)
 	{
 		//logger.info("FINDING BACK CANDLE FOR "+candleData.toString());
@@ -226,6 +182,13 @@ public class Utils {
 		 return null;
 	}
 	
+	/**
+	 * Identify whether moving average is rising or not for given number of days
+	 * @param candleData
+	 * @param stockPriceWithMA
+	 * @param scale
+	 * @return
+	 */
 	public static boolean isRisinngMAForCandle(StockPrice candleData,List<StockPrice>  stockPriceWithMA,int scale)
 	{
 		List<StockPrice> candlesDataBeforeDateForNoOfDays = getCandlesForLastNosOfDayForInstrument(candleData, stockPriceWithMA, scale);
@@ -234,15 +197,13 @@ public class Utils {
 		{
 			List<Float> movingAverages = candlesDataBeforeDateForNoOfDays.stream().map(s->s.getMovingAverage()).collect(Collectors.toList());
 			
-			boolean isRising = Ordering.natural().isOrdered(movingAverages);
+			boolean isRising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(0)) >= Utils.getIdealRisingCurve(candleData);
 			
-			isRising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(0)) >= Utils.getIdealRisingCurve(candleData);
-			
+			//Ordering.natural().isOrdered(movingAverages);
 			if(isRising)
 			{
 				//logger.info("RISING >> ==================================================="+new SimpleDateFormat("dd-MMM-yyy").format(candleData.getMarketDate()));
 				//movingAverages.forEach(p->logger.info(p.toString()));
-				//isRising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(0)) >= Utils.getIdealRisingCurve(candleData); // rising curve upwards
 			}
 			
 			return isRising;
@@ -253,6 +214,10 @@ public class Utils {
 		}
 	}
 	
+	/**
+	 * Marking entry
+	 * @param candle
+	 */
 	public static void setBuyEntry(StockPrice candle)
 	{
 		StockConstants.ENTRY_MARGIN = getEntryMargin(candle);
@@ -264,6 +229,12 @@ public class Utils {
 		candle.setOrderDetails("BUY : "+buyPrice+" STOPLOSS : "+stopLoss+" TARGET "+targetPrice);
 	}
 	
+	/**
+	 * get all upcoming next candles after given candle
+	 * @param candleData
+	 * @param stockPriceWithMA
+	 * @return
+	 */
 	public static List<StockPrice>  getCandlesAfter(StockPrice candleData,List<StockPrice>  stockPriceWithMA)
 	{
 		//logger.info("FINDING BACK CANDLE FOR "+candleData.toString());
@@ -286,7 +257,11 @@ public class Utils {
 		 return null;
 	}
 	
-	
+	/**
+	 * Mark trade exit
+	 * @param entryCandle
+	 * @param stockPriceWithMA
+	 */
 	public static void setExit(StockPrice entryCandle,List<StockPrice>  stockPriceWithMA)
 	{
 		List<StockPrice>  stockPriceList = getCandlesAfter(entryCandle, stockPriceWithMA);
@@ -316,6 +291,10 @@ public class Utils {
 		}
 	}
 	
+	/**
+	 * testing method for checking immediate next candle after support candle
+	 * @param stockPriceWithMA
+	 */
 	public static void prepareEntryCandles(List<StockPrice>  stockPriceWithMA)
 	{
 		for (int i = 0; i < stockPriceWithMA.size(); i++) 
@@ -357,6 +336,11 @@ public class Utils {
 		}
 	}
 	
+	/**
+	 * Identify minimum height candle must have
+	 * @param candle
+	 * @return
+	 */
 	public static int getIdealCandleHeight(StockPrice  candle)
 	{
 		int idealHeaight = 0;
@@ -376,6 +360,11 @@ public class Utils {
 		return idealHeaight;
 	}
 	
+	/**
+	 * Identify minimum points of rise of moving average for given candle
+	 * @param candle
+	 * @return
+	 */
 	public static int getIdealRisingCurve(StockPrice  candle)
 	{
 		int idealRise = 0;
@@ -396,6 +385,11 @@ public class Utils {
 		return idealRise;
 	}
 	
+	/**
+	 * Identify entry margin for given candle while placing order
+	 * @param candle
+	 * @return
+	 */
 	public static float getEntryMargin(StockPrice  candle)
 	{
 		float entryMargin = 0.0F;
