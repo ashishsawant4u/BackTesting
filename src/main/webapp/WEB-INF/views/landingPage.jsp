@@ -14,64 +14,41 @@
 <tags:scripts/>
 
 <div class="container">
-<h1>STOCK PATTERN</h1>
+<h1>Back Testing</h1>
 
-Simple Moving Average : ${simpleMovingAvg}
-Rising Scale : ${risingScale}
-Trades More Than 9 : ${profitabelTradesMoreThan9}
-
-<table class="table table-bordered table-hover">
-	<thead>
-	    <tr>
-	      <th scope="col">Instrument</th>
-	      <th scope="col">Trades Found</th>
-	      <th scope="col">Target Exit Count</th>
-	      <th scope="col">Stop Loss Count</th>
-	      <th scope="col">Overall P/L</th>
-	    </tr>
-  </thead>
-  <tbody>
-	<c:forEach var="candle" items="${tradeResults}">
-		<tr>
-			<td>${candle.instrument}</td>
-			<td>${candle.tradesCount}</td>
-			<td>${candle.targetExistCount}</td>
-			<td>${candle.stopLossCount}</td>
-			<td>${candle.profitableTrades}</td>
-		</tr>
-	</c:forEach>
-	</tbody>
-</table>
+<div class="card">
+  <div class="card-body">
+  		Simple Moving Average : <span class="badge rounded-pill bg-dark">${simpleMovingAvg}</span>
+		Rising Scale : <span class="badge rounded-pill bg-dark">${risingScale}</span>
+		Total Trades Found : <span class="badge rounded-pill bg-dark">${totalNoOfTrades}</span>
+		Trades More Than 9 For Symbol : <span class="badge rounded-pill bg-dark">${profitabelTradesMoreThan9}</span>
+  </div>
+</div>
 
 
 
 
-<table class="table table-bordered table-hover">
-<c:forEach var="prices" items="${stockPriceList}">
-	
-	<tr>
-		<td><fmt:formatDate value="${prices.marketDate}" pattern="dd-MMM-yyyy"/></td>
-		<td><b>O-</b>${prices.openPrice}</td>
-		<td><b>H-</b>${prices.highPrice}</td>
-		<td><b>L-</b>${prices.lowPrice}</td>
-		<td><b>C-</b>${prices.closePrice}</td>
-		<td style="color: red;">${prices.movingAverage}</td>
-		<c:if test="${prices.hasSupport eq true}">
-			<td style="background-color: green;color: white;">SUPPORT</td>
-		</c:if> 
-		<c:if test="${prices.entry eq true}">
-			<td style="background-color: blue;color: white;">ENTRY ${prices.orderDetails}</td>
-		</c:if>
-		<c:if test="${not empty prices.tradeResult}">
-			<td style="background-color: orange;color: white;">${prices.tradeResult}</td>
-		</c:if>
-		<%-- <c:if test="${prices.movingAverage < prices.lowPrice && (prices.lowPrice-prices.movingAverage)<=2}">
-			<td style="background-color: blue;">SUPPORT</td>
-		</c:if> --%>
-	</tr>
-		
-</c:forEach>
-</table>
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="symbolTradeSummary-tab" data-bs-toggle="tab" data-bs-target="#symbolTradeSummary" type="button" role="tab" aria-controls="home" aria-selected="true">Symbol Trade Summary</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="monthlyReport-tab" data-bs-toggle="tab" data-bs-target="#monthlyReport" type="button" role="tab" aria-controls="profile" aria-selected="false">Monthly Report</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="yearlyReport-tab" data-bs-toggle="tab" data-bs-target="#yearlyReport" type="button" role="tab" aria-controls="contact" aria-selected="false">Yearly Report</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tradesList-tab" data-bs-toggle="tab" data-bs-target="#tradesList" type="button" role="tab" aria-controls="contact" aria-selected="false">Trades</button>
+  </li>
+</ul>
+<div class="tab-content" id="myTabContent">
+  <div class="tab-pane fade show active" id="symbolTradeSummary" role="tabpanel" aria-labelledby="home-tab"><tags:symbolTradeResults/></div>
+  <div class="tab-pane fade" id="monthlyReport" role="tabpanel" aria-labelledby="profile-tab"><tags:monthlyReport/></div>
+  <div class="tab-pane fade" id="yearlyReport" role="tabpanel" aria-labelledby="contact-tab"><tags:yearlyReport/></div>
+  <div class="tab-pane fade" id="tradesList" role="tabpanel" aria-labelledby="contact-tab"><tags:tradeList/></div>
+</div>
+
 
 </div>
 

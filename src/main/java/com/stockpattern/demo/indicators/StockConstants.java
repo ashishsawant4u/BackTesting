@@ -24,5 +24,9 @@ public class StockConstants {
 	public static int CANDLE_HEIGHT_RANGE_10 = 10;
 	
 	public static int CANDLE_HEIGHT_RANGE_15 = 15;
+	
+	public static String STOP_LOSS = "STOP LOSS";
+
+	public static String TARGET_EXIT = "TARGET EXIT";
 
 }

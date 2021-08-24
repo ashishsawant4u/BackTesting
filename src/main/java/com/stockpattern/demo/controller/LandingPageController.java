@@ -5,15 +5,20 @@ import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -45,11 +50,15 @@ public class LandingPageController {
 	@Resource(name = "stockPatternStrategy")
 	StockPatternStrategy stockPatternStrategy;
 	
-	Map<String, Double> montlyUnrealisedProfitTotalMap = new ConcurrentHashMap<String, Double>();
+	Map<String, String> montlyUnrealisedProfitTotalMap = new ConcurrentHashMap<String, String>();
 	Map<String, List<Float>> montlyUnrealisedProfitMap = new ConcurrentHashMap<String, List<Float>>();
 	
-	Map<String, Double> yearlyUnrealisedProfitTotalMap = new ConcurrentHashMap<String, Double>();
+	Map<String, String> yearlyUnrealisedProfitTotalMap = new ConcurrentHashMap<String, String>();
 	Map<String, List<Float>> yearlyUnrealisedProfitMap = new ConcurrentHashMap<String, List<Float>>();
+	
+	long totalNoOfTrades;
+	
+	List<StockPrice>  tradeList = new ArrayList<StockPrice>();
 
 	
 	@RequestMapping("/scale/{scale}/{symbol}/{sma}")
@@ -61,6 +70,8 @@ public class LandingPageController {
 		montlyUnrealisedProfitMap.clear();
 		yearlyUnrealisedProfitTotalMap.clear();
 		yearlyUnrealisedProfitMap.clear();
+		totalNoOfTrades=0;
+		tradeList.clear();
 		
 		String string = "01-11-2018";	
 		DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
@@ -88,7 +99,43 @@ public class LandingPageController {
 		model.addAttribute("risingScale", scale);
 		model.addAttribute("tradeResults", sortedList);
 		model.addAttribute("profitabelTradesMoreThan9", sortedList.stream().filter(t->t.getProfitableTrades()>9).collect(Collectors.counting()));
+		model.addAttribute("totalNoOfTrades", totalNoOfTrades);
+		
+		
+		prepareReportForDispaly(model);
 		return "landingPage";
+	}
+
+	private void prepareReportForDispaly(Model model)  throws Exception
+	{
+		//monthly
+		Map<Date, String> tempMonthlyMap = new HashMap<Date, String>();
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
+		
+		for(String month : montlyUnrealisedProfitTotalMap.keySet())
+		{
+			tempMonthlyMap.put(sdf.parse(month), montlyUnrealisedProfitTotalMap.get(month));
+		}
+		
+		Map<Date, String> sortedmontlyUnrealisedProfitTotalMap  = new TreeMap<Date, String>(Collections.reverseOrder());
+		sortedmontlyUnrealisedProfitTotalMap.putAll(tempMonthlyMap);
+		model.addAttribute("montlyUnrealisedProfitTotalMap", sortedmontlyUnrealisedProfitTotalMap);
+		
+		//yearly
+		Map<String, String> sortedyearlyUnrealisedProfitTotalMap = new TreeMap<String, String>(yearlyUnrealisedProfitTotalMap);
+		model.addAttribute("yearlyUnrealisedProfitTotalMap", sortedyearlyUnrealisedProfitTotalMap);
+		
+		
+		//trades list
+
+		Collections.sort(tradeList, (c1, c2) -> c1.getMarketDate().compareTo(c2.getMarketDate()));
+		Collections.reverse(tradeList);
+		
+		model.addAttribute("tradeList", tradeList);
+		
+		//monthly investment
+		monthlyInvestmentReport(model);
 	}
 	
 	private List<TradeResults> backTestTradeResults(Date fromDate,String instrument) throws Exception
@@ -114,10 +161,12 @@ public class LandingPageController {
 				  {
 					  List<StockPrice>  candlesWithEntryExit =  stockPatternStrategy.backTestMovingAverage(symbol,fromDate, StockConstants.MOVING_AVERAGE_SCALE);
 					  
+					  tradeList.addAll(candlesWithEntryExit);
 					  monthlyUnrealisedProfitReport(candlesWithEntryExit);
 					  yearlyUnrealisedProfitReport(candlesWithEntryExit);
+					  totalNoOfTrades = totalNoOfTrades + candlesWithEntryExit.size();
 					  
-					  candlesWithEntryExit.forEach(c->logger.info(c.getSymbol()+"|"+new SimpleDateFormat("dd-MMM-yyyy").format(c.getMarketDate())+"|"+c.getOrderDetails()+"|"+c.getTradeResult()));
+					  candlesWithEntryExit.forEach(c->logger.info(c.getSymbol()+"|"+new SimpleDateFormat("dd-MMM-yyyy").format(c.getMarketDate())+"|"+c.getOrderDetails()+"|"+c.getTradeResult()+"|"+c.getTradeEntry().getTradeDuration()));
 					  
 					  if(CollectionUtils.isNotEmpty(candlesWithEntryExit))
 					  {
@@ -174,9 +223,11 @@ public class LandingPageController {
 			  }
 		  }
 		  
+		  DecimalFormat df=new DecimalFormat("#.##");
+		  
 		  for(String month : montlyUnrealisedProfitMap.keySet())
 		  {
-			  montlyUnrealisedProfitTotalMap.put(month, montlyUnrealisedProfitMap.get(month).stream().mapToDouble(Float::doubleValue).sum());
+			  montlyUnrealisedProfitTotalMap.put(month, df.format(montlyUnrealisedProfitMap.get(month).stream().mapToDouble(Float::doubleValue).sum()));
 		  }
 	}
 	
@@ -201,10 +252,46 @@ public class LandingPageController {
 			  }
 		  }
 		  
+		  DecimalFormat df=new DecimalFormat("#.##");
+		  
 		  for(String month : yearlyUnrealisedProfitMap.keySet())
 		  {
-			  yearlyUnrealisedProfitTotalMap.put(month, yearlyUnrealisedProfitMap.get(month).stream().mapToDouble(Float::doubleValue).sum());
+			  yearlyUnrealisedProfitTotalMap.put(month, df.format(yearlyUnrealisedProfitMap.get(month).stream().mapToDouble(Float::doubleValue).sum()));
 		  }
+	}
+	
+	private void monthlyInvestmentReport(Model model) throws Exception
+	{
+		 SimpleDateFormat monthsFormat = new SimpleDateFormat("MMM-yyyy");
+		 
+		 Map<String, Float> monthlyInvestmentMap = new HashMap<String, Float>();
+		
+		for(StockPrice trade : tradeList)
+		{
+			String month = monthsFormat.format(trade.getMarketDate());
+			
+			 if(!monthlyInvestmentMap.containsKey(month)) 
+			 {
+				 monthlyInvestmentMap.put(month, trade.getTradeEntry().getInvestment());
+			 }
+			 else
+			 {
+				 monthlyInvestmentMap.put(month, monthlyInvestmentMap.get(month) + trade.getTradeEntry().getInvestment()); 
+			 }
+		}
+		
+		Map<Date, String> tempMonthlyMap = new HashMap<Date, String>();
+		DecimalFormat df=new DecimalFormat("#.##");
+		
+		for(String month : monthlyInvestmentMap.keySet())
+		{
+			tempMonthlyMap.put(monthsFormat.parse(month), df.format(monthlyInvestmentMap.get(month)));
+		}
+		
+		Map<Date, String> sortedMap  = new TreeMap<Date, String>(Collections.reverseOrder());
+		sortedMap.putAll(tempMonthlyMap);
+		
+		model.addAttribute("monthlyInvestmentMap",sortedMap);
 	}
 
 	private List<String> getShortlistedStocks() throws Exception 

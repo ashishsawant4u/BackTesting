@@ -37,6 +37,8 @@ public class StockPrice {
 	private float pnlAmount;
 	
 	private float movingAverage200;
+	
+	private TradeEntryData tradeEntry;
 
 	public String getSymbol() {
 		return symbol;
@@ -174,6 +176,14 @@ public class StockPrice {
 		this.movingAverage200 = movingAverage200;
 	}
 
+	public TradeEntryData getTradeEntry() {
+		return tradeEntry;
+	}
+
+	public void setTradeEntry(TradeEntryData tradeEntry) {
+		this.tradeEntry = tradeEntry;
+	}
+
 	@Override
 	public String toString() {
 		return "StockPrice [symbol=" + symbol + ", marketDate=" + marketDate + ", openPrice=" + openPrice
@@ -181,9 +191,7 @@ public class StockPrice {
 				+ ", movingAverage=" + movingAverage + ", hasSupport=" + hasSupport + ", tradeResult=" + tradeResult
 				+ ", entry=" + entry + ", exit=" + exit + ", orderDetails=" + orderDetails + ", isGreenCandle="
 				+ isGreenCandle + ", isRedCandle=" + isRedCandle + ", isMARising=" + isMARising + ", pnlAmount="
-				+ pnlAmount + ", movingAverage200=" + movingAverage200 + "]";
+				+ pnlAmount + ", movingAverage200=" + movingAverage200 + ", tradeEntry=" + tradeEntry + "]";
 	}
-
-	
 	
 }

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -18,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.stockpattern.demo.models.StockPrice;
+import com.stockpattern.demo.models.TradeEntryData;
 
 public class Utils {
 
@@ -226,7 +228,25 @@ public class Utils {
 		float buyPrice = candle.getHighPrice() + StockConstants.ENTRY_MARGIN;
 		float stopLoss = candle.getLowPrice() - StockConstants.ENTRY_MARGIN;
 		float targetPrice = buyPrice+((buyPrice-stopLoss)*2);
-		candle.setOrderDetails("BUY : "+buyPrice+" STOPLOSS : "+stopLoss+" TARGET "+targetPrice);
+		
+		
+		TradeEntryData tradeEntry = new TradeEntryData();
+		tradeEntry.setBuyPrice(buyPrice);
+		tradeEntry.setStopLossPrice(stopLoss);
+		tradeEntry.setTargetPrice(targetPrice);
+		tradeEntry.setLossPerUnit(buyPrice-stopLoss);
+		
+		
+		candle.setTradeEntry(tradeEntry);
+		
+		tradeEntry.setQuantity(QuantityPlanner.getQuantity(candle));
+		
+		tradeEntry.setInvestment(tradeEntry.getQuantity()*buyPrice);
+		
+		candle.setTradeEntry(tradeEntry);
+		
+		candle.setOrderDetails("BUY : "+buyPrice+" STOPLOSS : "+stopLoss+" TARGET : "+targetPrice+" QUANTITY : "+tradeEntry.getQuantity()
+								+"|INVESTMENT|"+tradeEntry.getInvestment());
 	}
 	
 	/**
@@ -266,8 +286,10 @@ public class Utils {
 	{
 		List<StockPrice>  stockPriceList = getCandlesAfter(entryCandle, stockPriceWithMA);
 		
-		float buyPrice = entryCandle.getHighPrice()+1;
-		float stopLossPrice = entryCandle.getLowPrice()-1;
+		StockConstants.ENTRY_MARGIN = getEntryMargin(entryCandle);
+		
+		float buyPrice = entryCandle.getHighPrice() + StockConstants.ENTRY_MARGIN;
+		float stopLossPrice = entryCandle.getLowPrice() - StockConstants.ENTRY_MARGIN;
 		float targetPrice = buyPrice+((buyPrice-stopLossPrice)*2);
 		
 		
@@ -276,19 +298,33 @@ public class Utils {
 			if(candle.getLowPrice() <= targetPrice && targetPrice <=candle.getHighPrice())
 			{
 				entryCandle.setExit(true);
-				entryCandle.setTradeResult("TARGET_EXIT ON "+new SimpleDateFormat("dd-MMM-yyyy").format(candle.getMarketDate())+"|P/L|"+ (targetPrice-buyPrice));
-				entryCandle.setPnlAmount(targetPrice-buyPrice);
+				//entryCandle.setPnlAmount(targetPrice-buyPrice);
+				entryCandle.getTradeEntry().setTradeStatus(StockConstants.TARGET_EXIT);
+				entryCandle.getTradeEntry().setTradeExitDate(candle.getMarketDate());
+				entryCandle.getTradeEntry().setTradeDuration(getNosDaysBetweenDates(entryCandle.getMarketDate(), candle.getMarketDate()));
+				entryCandle.setPnlAmount((targetPrice-buyPrice)*entryCandle.getTradeEntry().getQuantity());
+				entryCandle.setTradeResult("TARGET_EXIT ON "+new SimpleDateFormat("dd-MMM-yyyy").format(candle.getMarketDate())+"|P/L|"+ entryCandle.getPnlAmount());
 				break;
 			}
 			if(candle.getLowPrice() <= stopLossPrice && stopLossPrice <=candle.getHighPrice())
 			{
 				entryCandle.setExit(true);
-				entryCandle.setTradeResult("STOP_LOSS ON "+new SimpleDateFormat("dd-MMM-yyyy").format(candle.getMarketDate())+"|P/L|-"+ (buyPrice-stopLossPrice));
-				entryCandle.setPnlAmount(-(buyPrice-stopLossPrice));
+				//entryCandle.setPnlAmount(-(buyPrice-stopLossPrice));
+				entryCandle.getTradeEntry().setTradeStatus(StockConstants.STOP_LOSS);
+				entryCandle.getTradeEntry().setTradeExitDate(candle.getMarketDate());
+				entryCandle.getTradeEntry().setTradeDuration(getNosDaysBetweenDates(entryCandle.getMarketDate(), candle.getMarketDate()));
+				entryCandle.setPnlAmount(-((buyPrice-stopLossPrice)*entryCandle.getTradeEntry().getQuantity()));
+				entryCandle.setTradeResult("STOP_LOSS ON "+new SimpleDateFormat("dd-MMM-yyyy").format(candle.getMarketDate())+"|P/L|"+ entryCandle.getPnlAmount());
 				break;
 			}
 			
 		}
+	}
+	
+	public static long getNosDaysBetweenDates(Date entryDate, Date existDate) 
+	{
+	    long diff = existDate.getTime() - entryDate.getTime();
+	    return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
 	}
 	
 	/**
