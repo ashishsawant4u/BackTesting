@@ -20,6 +20,7 @@
 	      <th scope="col">Loss Per Unit</th>
 	      <th scope="col">Quantity</th>
 	      <th scope="col">Investment</th>
+	      <th scope="col">Max Possible Loss</th>
 	      <th scope="col">Exist Date</th>
 	      <th scope="col">Trade Status</th>
 	      <th scope="col">P/L</th>
@@ -43,6 +44,7 @@
 			<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${trade.tradeEntry.lossPerUnit}" /></td>
 			<td>${trade.tradeEntry.quantity}</td>
 			<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${trade.tradeEntry.investment}" /></td>
+			<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${trade.tradeEntry.lossPerUnit * trade.tradeEntry.quantity}" /></td>
 			<td><fmt:formatDate value="${trade.tradeEntry.tradeExitDate}" pattern="dd-MMM-yyyy"/></td>
 			<td>${trade.tradeEntry.tradeStatus}</td>
 			<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${trade.pnlAmount}" /></td>

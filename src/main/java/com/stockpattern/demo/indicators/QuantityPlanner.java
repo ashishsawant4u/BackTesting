@@ -24,7 +24,9 @@ public class QuantityPlanner {
 	
 	static float MAX_AMOUNT_PER_TRADE = 10000.00F;
 	
-	static float MAX_RISK_PER_TRADE = MAX_AFFORDABLE_LOSS_AMOUNT / NUMBER_OF_TRADES_CAN_GO_WRONG;
+	//static float MAX_RISK_PER_TRADE = MAX_AFFORDABLE_LOSS_AMOUNT / NUMBER_OF_TRADES_CAN_GO_WRONG;
+	
+	static float MAX_RISK_PER_TRADE = 7000;
 	
 	public static Map<String,Float> monthlyTradeAmountTrackerMap = new HashMap<String, Float>();
 	
