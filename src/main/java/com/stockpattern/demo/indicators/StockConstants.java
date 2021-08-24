@@ -28,5 +28,7 @@ public class StockConstants {
 	public static String STOP_LOSS = "STOP LOSS";
 
 	public static String TARGET_EXIT = "TARGET EXIT";
+	
+	public static float REWARD_RATION = 2.5F;
 
 }

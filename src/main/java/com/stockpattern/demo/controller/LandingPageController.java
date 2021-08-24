@@ -33,6 +33,7 @@ import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.stockpattern.demo.indicators.QuantityPlanner;
 import com.stockpattern.demo.indicators.StockConstants;
 import com.stockpattern.demo.models.StockPrice;
 import com.stockpattern.demo.models.TradeResults;
@@ -66,14 +67,9 @@ public class LandingPageController {
 	{
 		logger.info("STOCKPATTERN.......");
 		
-		montlyUnrealisedProfitTotalMap.clear();
-		montlyUnrealisedProfitMap.clear();
-		yearlyUnrealisedProfitTotalMap.clear();
-		yearlyUnrealisedProfitMap.clear();
-		totalNoOfTrades=0;
-		tradeList.clear();
+		resetData();
 		
-		String string = "01-11-2018";	
+		String string = "01-11-2019";	
 		DateFormat format = new SimpleDateFormat("dd-MM-yyyy");
 		Date fromDate = format.parse(string);
 		
@@ -87,7 +83,6 @@ public class LandingPageController {
 			StockConstants.MOVING_AVERAGE_SCALE = Integer.parseInt(sma);
 		}
 		 
-		//allSymbolTXT(fromDate);
 	
 		List<TradeResults> tradeResultsList = backTestTradeResults(fromDate,symbol);
 		
@@ -106,36 +101,15 @@ public class LandingPageController {
 		return "landingPage";
 	}
 
-	private void prepareReportForDispaly(Model model)  throws Exception
+	private void resetData() 
 	{
-		//monthly
-		Map<Date, String> tempMonthlyMap = new HashMap<Date, String>();
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
-		
-		for(String month : montlyUnrealisedProfitTotalMap.keySet())
-		{
-			tempMonthlyMap.put(sdf.parse(month), montlyUnrealisedProfitTotalMap.get(month));
-		}
-		
-		Map<Date, String> sortedmontlyUnrealisedProfitTotalMap  = new TreeMap<Date, String>(Collections.reverseOrder());
-		sortedmontlyUnrealisedProfitTotalMap.putAll(tempMonthlyMap);
-		model.addAttribute("montlyUnrealisedProfitTotalMap", sortedmontlyUnrealisedProfitTotalMap);
-		
-		//yearly
-		Map<String, String> sortedyearlyUnrealisedProfitTotalMap = new TreeMap<String, String>(yearlyUnrealisedProfitTotalMap);
-		model.addAttribute("yearlyUnrealisedProfitTotalMap", sortedyearlyUnrealisedProfitTotalMap);
-		
-		
-		//trades list
-
-		Collections.sort(tradeList, (c1, c2) -> c1.getMarketDate().compareTo(c2.getMarketDate()));
-		Collections.reverse(tradeList);
-		
-		model.addAttribute("tradeList", tradeList);
-		
-		//monthly investment
-		monthlyInvestmentReport(model);
+		montlyUnrealisedProfitTotalMap.clear();
+		montlyUnrealisedProfitMap.clear();
+		yearlyUnrealisedProfitTotalMap.clear();
+		yearlyUnrealisedProfitMap.clear();
+		totalNoOfTrades=0;
+		tradeList.clear();
+		QuantityPlanner.monthlyTradeAmountTrackerMap.clear();
 	}
 	
 	private List<TradeResults> backTestTradeResults(Date fromDate,String instrument) throws Exception
@@ -200,6 +174,82 @@ public class LandingPageController {
 		  tradeResultsList.forEach(trades->logger.info(trades.getInstrument()+"|"+trades.getTradesCount()+"|"+trades.getTargetExistCount()+"|"+trades.getStopLossCount()+"|"+trades.getProfitableTrades()));
 		  
 		  return tradeResultsList;
+	}
+	
+	private void prepareReportForDispaly(Model model)  throws Exception
+	{
+		//monthly
+		Map<Date, String> tempMonthlyMap = new HashMap<Date, String>();
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
+		
+		for(String month : montlyUnrealisedProfitTotalMap.keySet())
+		{
+			tempMonthlyMap.put(sdf.parse(month), montlyUnrealisedProfitTotalMap.get(month));
+		}
+		
+		Map<Date, String> sortedmontlyUnrealisedProfitTotalMap  = new TreeMap<Date, String>(Collections.reverseOrder());
+		sortedmontlyUnrealisedProfitTotalMap.putAll(tempMonthlyMap);
+		model.addAttribute("montlyUnrealisedProfitTotalMap", sortedmontlyUnrealisedProfitTotalMap);
+		
+		//yearly
+		Map<String, String> sortedyearlyUnrealisedProfitTotalMap = new TreeMap<String, String>(yearlyUnrealisedProfitTotalMap);
+		model.addAttribute("yearlyUnrealisedProfitTotalMap", sortedyearlyUnrealisedProfitTotalMap);
+		
+		
+		//trades list
+
+		Collections.sort(tradeList, (c1, c2) -> c1.getMarketDate().compareTo(c2.getMarketDate()));
+		Collections.reverse(tradeList);
+		
+		model.addAttribute("tradeList", tradeList);
+		
+		//monthly investment
+		monthlyInvestmentReport(model);
+		
+		//monthly trade count
+		monthlyTradeCount(model);
+		
+		model.addAttribute("totalTargetExitCount",tradeList.stream().filter(t->null!=t.getTradeEntry().getTradeStatus()).filter(t->t.getTradeEntry().getTradeStatus().equals(StockConstants.TARGET_EXIT)).collect(Collectors.toList()).size());
+		model.addAttribute("totalStopLossCount",tradeList.stream().filter(t->null!=t.getTradeEntry().getTradeStatus()).filter(t->t.getTradeEntry().getTradeStatus().equals(StockConstants.STOP_LOSS)).collect(Collectors.toList()).size());
+
+		logger.info("MonthlyTradeAmountMap");
+		QuantityPlanner.monthlyTradeAmountTrackerMap.forEach((key, value) -> logger.info(key + "|" + value));
+	}
+	
+	private void monthlyTradeCount(Model model)  throws Exception
+	{
+	
+		Map<String,Long> monthlyTradesCountMap = new HashMap<String, Long>();
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
+		
+		for(StockPrice trade : tradeList)
+		{
+			String month = sdf.format(trade.getMarketDate());
+			if(!monthlyTradesCountMap.containsKey(month))
+			{
+				monthlyTradesCountMap.put(month, 1L);
+			}
+			else
+			{
+				monthlyTradesCountMap.put(month, monthlyTradesCountMap.get(month) + 1L);
+			}
+		}
+		
+		Map<Date, Long> tempMonthlyMap = new HashMap<Date, Long>();
+		
+		
+		for(String month : monthlyTradesCountMap.keySet())
+		{
+			tempMonthlyMap.put(sdf.parse(month), monthlyTradesCountMap.get(month));
+		}
+		
+		Map<Date, Long> sortedMap  = new TreeMap<Date, Long>(Collections.reverseOrder());
+		sortedMap.putAll(tempMonthlyMap);
+		
+		model.addAttribute("monthlyTradesCountMap",sortedMap);
+		
 	}
 
 	private void monthlyUnrealisedProfitReport(List<StockPrice> candlesWithEntryExit) 

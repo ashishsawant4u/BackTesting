@@ -1,5 +1,6 @@
 package com.stockpattern.demo.strategy;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.stockpattern.demo.indicators.Indicators;
+import com.stockpattern.demo.indicators.QuantityPlanner;
 import com.stockpattern.demo.indicators.StockConstants;
 import com.stockpattern.demo.indicators.Utils;
 import com.stockpattern.demo.models.StockPrice;
@@ -46,12 +48,24 @@ public class StockPatternStrategyImpl implements StockPatternStrategy {
 		List<StockPrice>  stockPriceGreenAndSupportWithMARising = stockPriceGreenAndSupportWithMA.stream().filter(candle->candle.isMARising()).collect(Collectors.toList());
 		
 		
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
 		//Marking Entry
-		stockPriceGreenAndSupportWithMARising.forEach(candle->Utils.setBuyEntry(candle));
+		stockPriceGreenAndSupportWithMARising.forEach(candle->{
+			
+			String month =  sdf.format(candle.getMarketDate());
+			//Buy only if monthly trade budget not exhausted
+			if(null==QuantityPlanner.monthlyTradeAmountTrackerMap.get(month) || QuantityPlanner.monthlyTradeAmountTrackerMap.get(month) < QuantityPlanner.MAX_TRADE_AMOUNT_PER_MONTH)
+			{
+				Utils.setBuyEntry(candle);
+			}
+			
+		});
 		
-		stockPriceGreenAndSupportWithMARising.forEach(candle->Utils.setExit(candle, stockPriceWithMA));
+		List<StockPrice> withingBudgetExecutedTrades = stockPriceGreenAndSupportWithMARising.stream().filter(c->c.isEntry()).collect(Collectors.toList());
 		
-		return stockPriceGreenAndSupportWithMARising;
+		withingBudgetExecutedTrades.forEach(candle->Utils.setExit(candle, stockPriceWithMA));
+		
+		return withingBudgetExecutedTrades;
 	}
 	
 

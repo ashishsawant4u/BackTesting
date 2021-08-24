@@ -16,19 +16,21 @@
 <div class="container">
 <h1>Back Testing</h1>
 
-<div class="card">
+<div class="card bg-warning">
   <div class="card-body">
   		Simple Moving Average : <span class="badge rounded-pill bg-dark">${simpleMovingAvg}</span>
 		Rising Scale : <span class="badge rounded-pill bg-dark">${risingScale}</span>
 		Total Trades Found : <span class="badge rounded-pill bg-dark">${totalNoOfTrades}</span>
-		Trades More Than 9 For Symbol : <span class="badge rounded-pill bg-dark">${profitabelTradesMoreThan9}</span>
+		Target Exit Count : <span class="badge rounded-pill bg-dark">${totalTargetExitCount}</span>
+		Stop Loss Count :  <span class="badge rounded-pill bg-dark">${totalStopLossCount}</span>
+		Profitable Trades > 9 For Symbol : <span class="badge rounded-pill bg-dark">${profitabelTradesMoreThan9}</span>
   </div>
 </div>
 
 
 
 
-<ul class="nav nav-tabs" id="myTab" role="tablist">
+<ul class="nav nav-tabs mt-1" id="myTab" role="tablist">
   <li class="nav-item" role="presentation">
     <button class="nav-link active" id="symbolTradeSummary-tab" data-bs-toggle="tab" data-bs-target="#symbolTradeSummary" type="button" role="tab" aria-controls="home" aria-selected="true">Symbol Trade Summary</button>
   </li>

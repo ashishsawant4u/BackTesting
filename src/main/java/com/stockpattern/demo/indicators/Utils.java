@@ -201,6 +201,8 @@ public class Utils {
 			
 			boolean isRising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(0)) >= Utils.getIdealRisingCurve(candleData);
 			
+			isRising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(movingAverages.size()-20)) >= Utils.getIdealRisingCurve(candleData);
+			
 			//Ordering.natural().isOrdered(movingAverages);
 			if(isRising)
 			{
@@ -227,7 +229,7 @@ public class Utils {
 		candle.setEntry(true);
 		float buyPrice = candle.getHighPrice() + StockConstants.ENTRY_MARGIN;
 		float stopLoss = candle.getLowPrice() - StockConstants.ENTRY_MARGIN;
-		float targetPrice = buyPrice+((buyPrice-stopLoss)*2);
+		float targetPrice = buyPrice+((buyPrice-stopLoss) * StockConstants.REWARD_RATION);
 		
 		
 		TradeEntryData tradeEntry = new TradeEntryData();
@@ -247,6 +249,8 @@ public class Utils {
 		
 		candle.setOrderDetails("BUY : "+buyPrice+" STOPLOSS : "+stopLoss+" TARGET : "+targetPrice+" QUANTITY : "+tradeEntry.getQuantity()
 								+"|INVESTMENT|"+tradeEntry.getInvestment());
+		
+		QuantityPlanner.trackTradeAmountForMonth(candle);
 	}
 	
 	/**
@@ -290,7 +294,7 @@ public class Utils {
 		
 		float buyPrice = entryCandle.getHighPrice() + StockConstants.ENTRY_MARGIN;
 		float stopLossPrice = entryCandle.getLowPrice() - StockConstants.ENTRY_MARGIN;
-		float targetPrice = buyPrice+((buyPrice-stopLossPrice)*2);
+		float targetPrice = buyPrice+((buyPrice-stopLossPrice) * StockConstants.REWARD_RATION);
 		
 		
 		for(StockPrice candle : stockPriceList)

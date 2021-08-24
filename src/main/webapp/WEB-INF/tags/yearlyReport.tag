@@ -4,14 +4,19 @@
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>   
 
 
-<table class="table table-bordered table-hover">
+<div class="input-group mb-3 mt-2">
+  <span class="input-group-text" id="basic-addon1">Filter</span>
+  <input id="yearlyTableFilter" type="text" class="form-control" placeholder="Type here..." aria-describedby="basic-addon1">
+</div>
+
+<table class="table table-bordered table-hover" id="yearlyReportTable">
 	<thead>
 	    <tr>
 	      <th scope="col">Year</th>
 	      <th scope="col">P/L</th>
 	    </tr>
   </thead>
-  <tbody>
+  <tbody class="searchable">
 	<c:forEach var="entry" items="${yearlyUnrealisedProfitTotalMap}">
 		<tr>
 			
