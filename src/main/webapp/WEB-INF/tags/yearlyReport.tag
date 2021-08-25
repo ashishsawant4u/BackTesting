@@ -9,27 +9,25 @@
   <input id="yearlyTableFilter" type="text" class="form-control" placeholder="Type here..." aria-describedby="basic-addon1">
 </div>
 
+
 <table class="table table-bordered table-hover" id="yearlyReportTable">
 	<thead>
 	    <tr>
 	      <th scope="col">Year</th>
+	      <th scope="col">Trade Count</th>
+	      <th scope="col">Investment</th>
 	      <th scope="col">P/L</th>
+	      <th scope="col">% Gain</th>
 	    </tr>
   </thead>
   <tbody class="searchable">
-	<c:forEach var="entry" items="${yearlyUnrealisedProfitTotalMap}">
+	<c:forEach var="report" items="${yearlyReportForTrades}">
 		<tr>
-			
-			<fmt:parseNumber var = "amount" type = "number" value = "${entry.value}" />
-			<c:if test="${amount lt 0}">
-					<td class="table-danger table-primary">${entry.key}</td>
-					<td class="table-danger">${entry.value}</td>
-			</c:if>
-			<c:if test="${amount gt 0}">
-					<td class="table-primary">${entry.key}</td>
-					<td>${entry.value}</td>
-			</c:if>
-			
+			<td class="table-primary"><fmt:formatDate value="${report.year}" pattern="yyyy"/></td>
+			<td>${report.tradesCount}</td>
+			<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${report.investment}" /></td>
+			<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${report.profitAndLoss}" /></td>
+			<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${report.percentageGain}" />%</td>
 		</tr>
 	</c:forEach>
 	</tbody>

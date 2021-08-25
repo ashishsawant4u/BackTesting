@@ -228,8 +228,8 @@ public class Utils {
 		
 		candle.setEntry(true);
 		float buyPrice = candle.getHighPrice() + StockConstants.ENTRY_MARGIN;
-		float stopLoss = candle.getLowPrice() - StockConstants.ENTRY_MARGIN;
-		float targetPrice = buyPrice+((buyPrice-stopLoss) * StockConstants.REWARD_RATION);
+		float stopLoss = candle.getLowPrice() - StockConstants.RISK_RATIO;
+		float targetPrice = buyPrice+((buyPrice-stopLoss) * StockConstants.REWARD_RATIO);
 		
 		
 		TradeEntryData tradeEntry = new TradeEntryData();
@@ -293,8 +293,8 @@ public class Utils {
 		StockConstants.ENTRY_MARGIN = getEntryMargin(entryCandle);
 		
 		float buyPrice = entryCandle.getHighPrice() + StockConstants.ENTRY_MARGIN;
-		float stopLossPrice = entryCandle.getLowPrice() - StockConstants.ENTRY_MARGIN;
-		float targetPrice = buyPrice+((buyPrice-stopLossPrice) * StockConstants.REWARD_RATION);
+		float stopLossPrice = entryCandle.getLowPrice() - StockConstants.RISK_RATIO;
+		float targetPrice = buyPrice+((buyPrice-stopLossPrice) * StockConstants.REWARD_RATIO);
 		
 		
 		for(StockPrice candle : stockPriceList)

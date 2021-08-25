@@ -13,18 +13,8 @@ $( document ).ready(function() {
 		$('#monthlyTableFilter').keyup(function () {
 
             var rex = new RegExp($(this).val(), 'i');
-            $('#monthlyInvestmentTable .searchable tr').hide();
-            $('#monthlyInvestmentTable .searchable tr').filter(function () {
-                return rex.test($(this).text());
-            }).show();
-
-			$('#montlyUnrealisedProfitTable .searchable tr').hide();
-            $('#montlyUnrealisedProfitTable .searchable tr').filter(function () {
-                return rex.test($(this).text());
-            }).show();
-
-			$('#monthlyTradeCountTable .searchable tr').hide();
-            $('#monthlyTradeCountTable .searchable tr').filter(function () {
+            $('#monthlyTradeReportTable .searchable tr').hide();
+            $('#monthlyTradeReportTable .searchable tr').filter(function () {
                 return rex.test($(this).text());
             }).show();
 

@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,9 +19,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.annotation.Resource;
 
@@ -35,8 +38,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.stockpattern.demo.indicators.QuantityPlanner;
 import com.stockpattern.demo.indicators.StockConstants;
+import com.stockpattern.demo.models.MonthlyReport;
 import com.stockpattern.demo.models.StockPrice;
 import com.stockpattern.demo.models.TradeResults;
+import com.stockpattern.demo.models.YearlyReport;
 import com.stockpattern.demo.strategy.StockPatternStrategy;
 
 
@@ -50,14 +55,6 @@ public class LandingPageController {
 
 	@Resource(name = "stockPatternStrategy")
 	StockPatternStrategy stockPatternStrategy;
-	
-	Map<String, String> montlyUnrealisedProfitTotalMap = new ConcurrentHashMap<String, String>();
-	Map<String, List<Float>> montlyUnrealisedProfitMap = new ConcurrentHashMap<String, List<Float>>();
-	
-	Map<String, String> yearlyUnrealisedProfitTotalMap = new ConcurrentHashMap<String, String>();
-	Map<String, List<Float>> yearlyUnrealisedProfitMap = new ConcurrentHashMap<String, List<Float>>();
-	
-	long totalNoOfTrades;
 	
 	List<StockPrice>  tradeList = new ArrayList<StockPrice>();
 
@@ -94,7 +91,7 @@ public class LandingPageController {
 		model.addAttribute("risingScale", scale);
 		model.addAttribute("tradeResults", sortedList);
 		model.addAttribute("profitabelTradesMoreThan9", sortedList.stream().filter(t->t.getProfitableTrades()>9).collect(Collectors.counting()));
-		model.addAttribute("totalNoOfTrades", totalNoOfTrades);
+		model.addAttribute("totalNoOfTrades", tradeList.size());
 		
 		
 		prepareReportForDispaly(model);
@@ -103,11 +100,6 @@ public class LandingPageController {
 
 	private void resetData() 
 	{
-		montlyUnrealisedProfitTotalMap.clear();
-		montlyUnrealisedProfitMap.clear();
-		yearlyUnrealisedProfitTotalMap.clear();
-		yearlyUnrealisedProfitMap.clear();
-		totalNoOfTrades=0;
 		tradeList.clear();
 		QuantityPlanner.monthlyTradeAmountTrackerMap.clear();
 	}
@@ -136,9 +128,6 @@ public class LandingPageController {
 					  List<StockPrice>  candlesWithEntryExit =  stockPatternStrategy.backTestMovingAverage(symbol,fromDate, StockConstants.MOVING_AVERAGE_SCALE);
 					  
 					  tradeList.addAll(candlesWithEntryExit);
-					  monthlyUnrealisedProfitReport(candlesWithEntryExit);
-					  yearlyUnrealisedProfitReport(candlesWithEntryExit);
-					  totalNoOfTrades = totalNoOfTrades + candlesWithEntryExit.size();
 					  
 					  candlesWithEntryExit.forEach(c->logger.info(c.getSymbol()+"|"+new SimpleDateFormat("dd-MMM-yyyy").format(c.getMarketDate())+"|"+c.getOrderDetails()+"|"+c.getTradeResult()+"|"+c.getTradeEntry().getTradeDuration()));
 					  
@@ -161,15 +150,6 @@ public class LandingPageController {
 			  } 
 		  }
 		  
-		  //logger.info("Monthly Detail Report ");
-		  //montlyUnrealisedProfitMap.forEach((key, value) -> logger.info(key + ":" + value));
-		  
-		  logger.info("Monthly Report ");
-		  montlyUnrealisedProfitTotalMap.forEach((key, value) -> logger.info(key + "|" + value));
-		  
-		  logger.info("Yearly Report ");
-		  yearlyUnrealisedProfitTotalMap.forEach((key, value) -> logger.info(key + "|" + value));
-		  
 		  logger.info("Symbol|Trades Found|Target Exit Count|Stop Loss Count|Overall P/L");
 		  tradeResultsList.forEach(trades->logger.info(trades.getInstrument()+"|"+trades.getTradesCount()+"|"+trades.getTargetExistCount()+"|"+trades.getStopLossCount()+"|"+trades.getProfitableTrades()));
 		  
@@ -178,171 +158,113 @@ public class LandingPageController {
 	
 	private void prepareReportForDispaly(Model model)  throws Exception
 	{
-		//monthly
-		Map<Date, String> tempMonthlyMap = new HashMap<Date, String>();
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
-		
-		for(String month : montlyUnrealisedProfitTotalMap.keySet())
-		{
-			tempMonthlyMap.put(sdf.parse(month), montlyUnrealisedProfitTotalMap.get(month));
-		}
-		
-		Map<Date, String> sortedmontlyUnrealisedProfitTotalMap  = new TreeMap<Date, String>(Collections.reverseOrder());
-		sortedmontlyUnrealisedProfitTotalMap.putAll(tempMonthlyMap);
-		model.addAttribute("montlyUnrealisedProfitTotalMap", sortedmontlyUnrealisedProfitTotalMap);
+		List<MonthlyReport> monthlyReportList = prepareMonthlyTradingReport();
+		model.addAttribute("monthlyReportForTrades", monthlyReportList);
 		
 		//yearly
-		Map<String, String> sortedyearlyUnrealisedProfitTotalMap = new TreeMap<String, String>(yearlyUnrealisedProfitTotalMap);
-		model.addAttribute("yearlyUnrealisedProfitTotalMap", sortedyearlyUnrealisedProfitTotalMap);
-		
+		List<YearlyReport> yearlyReportList = prepareYearlyTradingReport(monthlyReportList);
+		model.addAttribute("yearlyReportForTrades", yearlyReportList);
 		
 		//trades list
-
 		Collections.sort(tradeList, (c1, c2) -> c1.getMarketDate().compareTo(c2.getMarketDate()));
 		Collections.reverse(tradeList);
-		
 		model.addAttribute("tradeList", tradeList);
-		
-		//monthly investment
-		monthlyInvestmentReport(model);
-		
-		//monthly trade count
-		monthlyTradeCount(model);
 		
 		model.addAttribute("totalTargetExitCount",tradeList.stream().filter(t->null!=t.getTradeEntry().getTradeStatus()).filter(t->t.getTradeEntry().getTradeStatus().equals(StockConstants.TARGET_EXIT)).collect(Collectors.toList()).size());
 		model.addAttribute("totalStopLossCount",tradeList.stream().filter(t->null!=t.getTradeEntry().getTradeStatus()).filter(t->t.getTradeEntry().getTradeStatus().equals(StockConstants.STOP_LOSS)).collect(Collectors.toList()).size());
 
-		logger.info("MonthlyTradeAmountMap");
-		QuantityPlanner.monthlyTradeAmountTrackerMap.forEach((key, value) -> logger.info(key + "|" + value));
 	}
-	
-	private void monthlyTradeCount(Model model)  throws Exception
+
+	private List<YearlyReport> prepareYearlyTradingReport(List<MonthlyReport> monthlyReportList) throws ParseException 
 	{
-	
-		Map<String,Long> monthlyTradesCountMap = new HashMap<String, Long>();
+		SimpleDateFormat yearDf = new SimpleDateFormat("yyyy");
 		
+		List<YearlyReport> yearlyReportList = new ArrayList<YearlyReport>();
+		
+		Set<String> uniqueTradeYears = tradeList.stream().map(t->yearDf.format(t.getMarketDate())).collect(Collectors.toSet());
+		
+		for(String year : uniqueTradeYears)
+		{	
+			YearlyReport yearlyReport =  new YearlyReport();
+			yearlyReport.setYear(yearDf.parse(year));
+			yearlyReportList.add(yearlyReport);
+		}
+		
+		for(YearlyReport yearReport : yearlyReportList)
+		{
+			List<MonthlyReport> allMonthlyReportsForYear =  monthlyReportList.stream().filter(m->yearDf.format(m.getMonth()).equals(yearDf.format(yearReport.getYear()))).collect(Collectors.toList());
+			yearReport.setInvestment((float)allMonthlyReportsForYear.stream().mapToDouble(m->m.getInvestment()).sum());
+			yearReport.setProfitAndLoss((float)allMonthlyReportsForYear.stream().mapToDouble(m->m.getProfitAndLoss()).sum());
+			yearReport.setPercentageGain((yearReport.getProfitAndLoss()/yearReport.getInvestment())*100);
+			yearReport.setTradesCount(allMonthlyReportsForYear.stream().mapToLong(m->m.getTradesCount()).sum());
+		}
+		
+		Collections.sort(yearlyReportList, (c1, c2) -> c1.getYear().compareTo(c2.getYear()));
+		Collections.reverse(yearlyReportList);
+		return yearlyReportList;
+	}
+
+	private List<MonthlyReport> prepareMonthlyTradingReport() throws ParseException 
+	{
+		List<MonthlyReport> monthlyReportList = new ArrayList<MonthlyReport>();
+	
 		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
 		
+		Set<String> uniqueTradeMonths = tradeList.stream().map(t->sdf.format(t.getMarketDate())).collect(Collectors.toSet());
+		
+		for(String month : uniqueTradeMonths)
+		{	
+			MonthlyReport monthlyReport =  new MonthlyReport();
+			monthlyReport.setMonth(sdf.parse(month));
+			monthlyReportList.add(monthlyReport);
+		}
+		
 		for(StockPrice trade : tradeList)
-		{
-			String month = sdf.format(trade.getMarketDate());
-			if(!monthlyTradesCountMap.containsKey(month))
+		{	
+			MonthlyReport monthlyReportForTrade = monthlyReportList.stream().filter(m->sdf.format(m.getMonth()).equals(sdf.format(trade.getMarketDate()))).findFirst().get();
+			
+			int indexForMonthlyReport = IntStream.range(0, monthlyReportList.size()).filter(index->sdf.format(monthlyReportList.get(index).getMonth()).equals(sdf.format(trade.getMarketDate()))).findFirst().getAsInt();
+			
+			//investment
+			if(monthlyReportForTrade.getInvestment() == 0.0F)
 			{
-				monthlyTradesCountMap.put(month, 1L);
+				monthlyReportForTrade.setInvestment(trade.getTradeEntry().getInvestment());
 			}
 			else
 			{
-				monthlyTradesCountMap.put(month, monthlyTradesCountMap.get(month) + 1L);
+				monthlyReportForTrade.setInvestment(monthlyReportForTrade.getInvestment() + trade.getTradeEntry().getInvestment());
 			}
-		}
-		
-		Map<Date, Long> tempMonthlyMap = new HashMap<Date, Long>();
-		
-		
-		for(String month : monthlyTradesCountMap.keySet())
-		{
-			tempMonthlyMap.put(sdf.parse(month), monthlyTradesCountMap.get(month));
-		}
-		
-		Map<Date, Long> sortedMap  = new TreeMap<Date, Long>(Collections.reverseOrder());
-		sortedMap.putAll(tempMonthlyMap);
-		
-		model.addAttribute("monthlyTradesCountMap",sortedMap);
-		
-	}
-
-	private void monthlyUnrealisedProfitReport(List<StockPrice> candlesWithEntryExit) 
-	{	
-		  SimpleDateFormat monthsFormat = new SimpleDateFormat("MMM-yyyy");
-		  for(StockPrice candle : candlesWithEntryExit)
-		  {
-			  String key = monthsFormat.format(candle.getMarketDate());
-			  
-			  if(!montlyUnrealisedProfitMap.containsKey(key)) 
-			  {
-				  List<Float> tradeProfits = new ArrayList<Float>();
-				  tradeProfits.add(candle.getPnlAmount());
-				  montlyUnrealisedProfitMap.put(key, tradeProfits);
-		      }
-			  else
-			  {
-				  List<Float> tradeExistingProfits = montlyUnrealisedProfitMap.get(key);
-				  tradeExistingProfits.add(candle.getPnlAmount());
-				  montlyUnrealisedProfitMap.put(key,tradeExistingProfits);  
-			  }
-		  }
-		  
-		  DecimalFormat df=new DecimalFormat("#.##");
-		  
-		  for(String month : montlyUnrealisedProfitMap.keySet())
-		  {
-			  montlyUnrealisedProfitTotalMap.put(month, df.format(montlyUnrealisedProfitMap.get(month).stream().mapToDouble(Float::doubleValue).sum()));
-		  }
-	}
-	
-	private void yearlyUnrealisedProfitReport(List<StockPrice> candlesWithEntryExit) 
-	{	
-		  SimpleDateFormat yearsFormat = new SimpleDateFormat("yyyy");
-		  for(StockPrice candle : candlesWithEntryExit)
-		  {
-			  String key = yearsFormat.format(candle.getMarketDate());
-			  
-			  if(!yearlyUnrealisedProfitMap.containsKey(key)) 
-			  {
-				  List<Float> tradeProfits = new ArrayList<Float>();
-				  tradeProfits.add(candle.getPnlAmount());
-				  yearlyUnrealisedProfitMap.put(key, tradeProfits);
-		      }
-			  else
-			  {
-				  List<Float> tradeExistingProfits = yearlyUnrealisedProfitMap.get(key);
-				  tradeExistingProfits.add(candle.getPnlAmount());
-				  yearlyUnrealisedProfitMap.put(key,tradeExistingProfits);  
-			  }
-		  }
-		  
-		  DecimalFormat df=new DecimalFormat("#.##");
-		  
-		  for(String month : yearlyUnrealisedProfitMap.keySet())
-		  {
-			  yearlyUnrealisedProfitTotalMap.put(month, df.format(yearlyUnrealisedProfitMap.get(month).stream().mapToDouble(Float::doubleValue).sum()));
-		  }
-	}
-	
-	private void monthlyInvestmentReport(Model model) throws Exception
-	{
-		 SimpleDateFormat monthsFormat = new SimpleDateFormat("MMM-yyyy");
-		 
-		 Map<String, Float> monthlyInvestmentMap = new HashMap<String, Float>();
-		
-		for(StockPrice trade : tradeList)
-		{
-			String month = monthsFormat.format(trade.getMarketDate());
 			
-			 if(!monthlyInvestmentMap.containsKey(month)) 
-			 {
-				 monthlyInvestmentMap.put(month, trade.getTradeEntry().getInvestment());
-			 }
-			 else
-			 {
-				 monthlyInvestmentMap.put(month, monthlyInvestmentMap.get(month) + trade.getTradeEntry().getInvestment()); 
-			 }
+			//P&L
+			if(monthlyReportForTrade.getProfitAndLoss() == 0.0F)
+			{
+				monthlyReportForTrade.setProfitAndLoss(trade.getPnlAmount());
+			}
+			else
+			{
+				monthlyReportForTrade.setProfitAndLoss(monthlyReportForTrade.getProfitAndLoss() + trade.getPnlAmount());
+			}
+			
+			//tradeCount
+			if(monthlyReportForTrade.getTradesCount() == 0)
+			{
+				monthlyReportForTrade.setTradesCount(1L);
+			}
+			else
+			{
+				monthlyReportForTrade.setTradesCount(monthlyReportForTrade.getTradesCount() + 1L);
+			}
+			
+			monthlyReportForTrade.setPercentageGain((monthlyReportForTrade.getProfitAndLoss()/monthlyReportForTrade.getInvestment())*100);
+			
+			monthlyReportList.set(indexForMonthlyReport, monthlyReportForTrade);
 		}
 		
-		Map<Date, String> tempMonthlyMap = new HashMap<Date, String>();
-		DecimalFormat df=new DecimalFormat("#.##");
-		
-		for(String month : monthlyInvestmentMap.keySet())
-		{
-			tempMonthlyMap.put(monthsFormat.parse(month), df.format(monthlyInvestmentMap.get(month)));
-		}
-		
-		Map<Date, String> sortedMap  = new TreeMap<Date, String>(Collections.reverseOrder());
-		sortedMap.putAll(tempMonthlyMap);
-		
-		model.addAttribute("monthlyInvestmentMap",sortedMap);
+		Collections.sort(monthlyReportList, (c1, c2) -> c1.getMonth().compareTo(c2.getMonth()));
+		Collections.reverse(monthlyReportList);
+		return monthlyReportList;
 	}
+	
 
 	private List<String> getShortlistedStocks() throws Exception 
 	{
