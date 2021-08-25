@@ -4,10 +4,10 @@
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>   
 
 
-<div class="input-group mb-3 mt-2">
+<!-- <div class="input-group mb-3 mt-2">
   <span class="input-group-text" id="basic-addon1">Filter</span>
   <input id="tradeListTableFilter" type="text" class="form-control" placeholder="Type here..." aria-describedby="basic-addon1">
-</div>
+</div> -->
 
 <table class="table table-bordered table-hover" id="tradeListTable">
 	<thead style="position: sticky;top: 0" class="table-dark">

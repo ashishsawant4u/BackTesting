@@ -8,7 +8,7 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-<title>Insert title here</title>
+<title>BacktestTrades</title>
 </head>
 <body>
 <tags:scripts/>
@@ -30,7 +30,7 @@
 
 
 
-<ul class="nav nav-tabs mt-1" id="myTab" role="tablist">
+<ul class="nav nav-tabs mt-1 mb-2" id="myTab" role="tablist">
   <li class="nav-item" role="presentation">
     <button class="nav-link active" id="symbolTradeSummary-tab" data-bs-toggle="tab" data-bs-target="#symbolTradeSummary" type="button" role="tab" aria-controls="home" aria-selected="true">Symbol Trade Summary</button>
   </li>

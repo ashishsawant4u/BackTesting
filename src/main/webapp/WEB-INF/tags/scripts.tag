@@ -2,8 +2,18 @@
 <script src="/webjars/jquery/3.6.0/jquery.min.js"></script>
 <link href="/webjars/bootstrap/5.0.0/css/bootstrap.min.css" rel="stylesheet">
 
-<!-- <link href="/js/bootstrap-table.min.css" rel="stylesheet">
-<script src="/js/bootstrap-table.min.js"></script>
-<script src="/js/bootstrap-table-filter-control.min.js"></script> -->
+
+<script src="/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/plugins/datatables/dataTables.buttons.min.js"></script>
+<script src="/plugins/datatables/jszip.min.js"></script>
+<script src="/plugins/datatables/pdfmake.min.js"></script>
+<script src="/plugins/datatables/vfs_fonts.js"></script>
+<script src="/plugins/datatables/buttons.html5.min.js"></script>
+
+<link href="/plugins/datatables/jquery.dataTables.min.css" rel="stylesheet">
+<link href="/plugins/datatables/buttons.dataTables.min.css" rel="stylesheet">
+
+
 
 <script src="/js/custom.js"></script>
+
