@@ -11,7 +11,7 @@
 
 
 <table class="table table-bordered table-hover" id="yearlyReportTable">
-	<thead>
+	<thead style="position: sticky;top: 0" class="table-dark">
 	    <tr>
 	      <th scope="col">Year</th>
 	      <th scope="col">Trade Count</th>
@@ -22,7 +22,12 @@
   </thead>
   <tbody class="searchable">
 	<c:forEach var="report" items="${yearlyReportForTrades}">
-		<tr>
+		<c:if test="${report.profitAndLoss gt 0}">
+				<tr>
+		</c:if>
+		<c:if test="${report.profitAndLoss lt 0}">
+				<tr class="table-danger">
+		</c:if>
 			<td class="table-primary"><fmt:formatDate value="${report.year}" pattern="yyyy"/></td>
 			<td>${report.tradesCount}</td>
 			<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${report.investment}" /></td>

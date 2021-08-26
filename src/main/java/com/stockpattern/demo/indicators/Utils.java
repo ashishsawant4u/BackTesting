@@ -199,9 +199,8 @@ public class Utils {
 		{
 			List<Float> movingAverages = candlesDataBeforeDateForNoOfDays.stream().map(s->s.getMovingAverage()).collect(Collectors.toList());
 			
-			boolean isRising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(0)) >= Utils.getIdealRisingCurve(candleData);
-			
-			isRising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(movingAverages.size()-20)) >= Utils.getIdealRisingCurve(candleData);
+			//boolean isRising = isRisingLogic1(candleData, movingAverages);
+			boolean isRising = isRisingLogic2(candleData, movingAverages);
 			
 			//Ordering.natural().isOrdered(movingAverages);
 			if(isRising)
@@ -216,6 +215,62 @@ public class Utils {
 		{
 			return false;
 		}
+	}
+
+
+	private static boolean isRisingLogic1(StockPrice candleData, List<Float> movingAverages) 
+	{
+		boolean isRising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(0)) >= Utils.getIdealRisingCurve(candleData);
+		
+		boolean is60Rising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(movingAverages.size() - 45)) >= Utils.getIdealRisingCurve(candleData);
+		
+		boolean is45Rising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(movingAverages.size() - 45)) >= Utils.getIdealRisingCurve(candleData);
+		
+		boolean is15Rising = (movingAverages.get(movingAverages.size()-1) - movingAverages.get(movingAverages.size() - 15)) >= Utils.getIdealRisingCurve(candleData);
+		
+		isRising = (isRising && is15Rising && is45Rising && is60Rising);
+		return isRising;
+	}
+	
+	private static boolean isRisingLogic2(StockPrice candleData, List<Float> movingAverages) 
+	{
+		boolean isRising = false;
+	
+		
+		
+		float previous90thCandleMA = movingAverages.get(0);
+		float previous60thCandleMA = movingAverages.get(movingAverages.size()-60);
+		float previous45thCandleMA = movingAverages.get(movingAverages.size()-45);
+		float previous30thCandleMA = movingAverages.get(movingAverages.size()-30);
+		float previous15thCandleMA = movingAverages.get(movingAverages.size()-15);
+		float currentCandleMA = movingAverages.get(89);
+		
+		
+//		 if((currentCandleMA < previous15thCandleMA) && 
+//		    (previous15thCandleMA <  previous30thCandleMA)  &&
+//			(previous30thCandleMA < previous45thCandleMA) && 
+//			(previous45thCandleMA < previous60thCandleMA) && 
+//			(previous60thCandleMA < previous90thCandleMA))
+//		 {
+//			 isRising = true; 
+//		 }
+		
+		double risePercentage = (previous90thCandleMA / currentCandleMA)*100;
+		
+		 if((currentCandleMA > previous15thCandleMA) && 
+			(previous15thCandleMA > previous30thCandleMA) &&
+			(previous30thCandleMA > previous45thCandleMA) && 
+			(previous45thCandleMA > previous60thCandleMA) && 
+			(previous60thCandleMA > previous90thCandleMA) &&
+					(
+							risePercentage < 10 || risePercentage < 20 || risePercentage < 30 || risePercentage < 40 || risePercentage < 50
+ 					)
+		  )
+		 {
+			 isRising = true; 
+		 }
+		
+		return isRising;
 	}
 	
 	/**

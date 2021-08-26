@@ -26,7 +26,12 @@
 			<td>${candle.tradesCount}</td>
 			<td>${candle.targetExistCount}</td>
 			<td>${candle.stopLossCount}</td>
-			<td>${candle.profitableTrades}</td>
+			<c:if test="${candle.profitableTrades lt 0}">
+				<td class="table-danger">${candle.profitableTrades}</td>
+			</c:if>
+			<c:if test="${candle.profitableTrades gt 0}">
+				<td>${candle.profitableTrades}</td>
+			</c:if>
 		</tr>
 	</c:forEach>
 	</tbody>
