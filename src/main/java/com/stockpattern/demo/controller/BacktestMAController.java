@@ -46,11 +46,11 @@ import com.stockpattern.demo.strategy.StockPatternStrategy;
 
 
 @Controller
-@RequestMapping("/stockpattern")
-public class LandingPageController {
+@RequestMapping("/backtestma")
+public class BacktestMAController {
 	
 	
-	Logger logger = LoggerFactory.getLogger(LandingPageController.class);
+	Logger logger = LoggerFactory.getLogger(BacktestMAController.class);
 
 
 	@Resource(name = "stockPatternStrategy")

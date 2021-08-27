@@ -90,7 +90,14 @@
 			    <artifactId>guava</artifactId>
 			    <version>30.1.1-jre</version>
 			</dependency>
-		  
+		
+			<dependency>
+			 <groupId>io.samco</groupId>
+			 <artifactId>stocknote-bridge-java</artifactId>
+			 <version>1.0.1</version>
+			 <scope>system</scope>
+			 <systemPath>${project.basedir}/src/main/resources/libs/stocknote-bridge-java-1.0.1.jar</systemPath>
+			</dependency>
 		
 		
 	</dependencies>

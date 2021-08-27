@@ -245,15 +245,7 @@ public class Utils {
 		float previous15thCandleMA = movingAverages.get(movingAverages.size()-15);
 		float currentCandleMA = movingAverages.get(89);
 		
-		
-//		 if((currentCandleMA < previous15thCandleMA) && 
-//		    (previous15thCandleMA <  previous30thCandleMA)  &&
-//			(previous30thCandleMA < previous45thCandleMA) && 
-//			(previous45thCandleMA < previous60thCandleMA) && 
-//			(previous60thCandleMA < previous90thCandleMA))
-//		 {
-//			 isRising = true; 
-//		 }
+	
 		
 		double risePercentage = (previous90thCandleMA / currentCandleMA)*100;
 		
