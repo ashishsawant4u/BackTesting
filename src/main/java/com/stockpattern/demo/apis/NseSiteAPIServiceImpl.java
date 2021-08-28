@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -29,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.stockpattern.demo.models.StockPrice;
 
@@ -87,7 +89,7 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 			    	{
 			    		 	String[] lineData = line.split(COMMA_DELIMITER);
 					        
-			            	Date marketDate = new SimpleDateFormat("dd-MMM-yyyy").parse(lineData[5].replace("\"", ""));  
+			            	Date marketDate = new SimpleDateFormat("dd-MMM-yy").parse(lineData[5].replace("\"", ""));  
 			            
 			            	StockPrice candle = new StockPrice();
 			            	candle.setSymbol(instrument);
@@ -149,11 +151,11 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 		cal.add(Calendar.YEAR, -10); 
 		Date previousDate = cal.getTime();
 		
-		SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyyyy");
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-dd-MM");
 		
 		String zipFileDirectory = "C:\\Users\\ashis\\Downloads\\archive\\Datasets\\SCRIP\\data-zip\\";
 		String csvFileDirectory = "C:\\Users\\ashis\\Downloads\\archive\\Datasets\\SCRIP\\data-csv\\";
-		
+	
 		
 		try  
 		{
@@ -214,6 +216,11 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 		conn.setRequestProperty("Referer", "https://www1.nseindia.com/products/content/equities/equities/archieve_eq.htm");
 		
 		int respCode = conn.getResponseCode(); 
+		
+		if(respCode==403)
+		{
+			logger.info("403 error for "+FILE_URL);
+		}
 		
 		if(respCode!=404)
 		{
@@ -368,7 +375,6 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 		List<StockPrice> candleList = readUsingCSVFile("ACC");		
 		Collections.sort(candleList, (c1, c2) -> c1.getMarketDate().compareTo(c2.getMarketDate()));
 		
-		
 		Calendar cal = Calendar.getInstance();  
 		cal.setTime(candleList.get(candleList.size()-1).getMarketDate());
 		cal.add(Calendar.DATE, 1);
@@ -409,7 +415,7 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 			
 			LocalDate start = previousDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 			LocalDate end = currentDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-
+			
 			for (LocalDate ld = start; ld.isBefore(end); ld = ld.plusDays(1)) 
 			{
 				String marketDateStr = ld.getDayOfMonth()+""+ld.getMonthValue()+""+ld.getYear();
@@ -441,7 +447,7 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 			logger.info("NseSiteAPIServiceImpl downloadEODZIP Failed "+e.getMessage());
 		}
 		
-		return "EOD Data Updates Successful";
+		return "EOD Data Updated Successful";
 	}
 	
 	private void updateSymbolwiseFiles(String csvFileDirectory)
@@ -482,10 +488,13 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 						    		 		if(symbolFile.exists())
 						    		 		{
 						    		 			//append to existing symbol wise file
-						    		 			 CSVWriter existingWriter = new CSVWriter(new FileWriter(symbolFilePath, true));
-						    		 			 String[] newRow = { symbol, open, high, low, close, marketDate };
-						    		 			 existingWriter.writeNext(newRow);
-						    		 			 existingWriter.close();
+						    		 			 if(!csvContainsValue(symbolFilePath, 5, marketDate))
+						    		 			 {
+						    		 				 CSVWriter existingWriter = new CSVWriter(new FileWriter(symbolFilePath, true));
+							    		 			 String[] newRow = { symbol, open, high, low, close, marketDate };
+							    		 			 existingWriter.writeNext(newRow);
+							    		 			 existingWriter.close();
+						    		 			 }
 						    		 		}
 						    		 		else
 						    		 		{
@@ -516,7 +525,32 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 			  logger.info(file.getName()+" done");
 		  }	  
 		  
-		  logger.info("Symbolwise File Created Successfully.");
+		  logger.info("Symbolwise File Updated Successfully.");
 	}
+	
+	
+	 public boolean csvContainsValue(String pathToFile, int columnIndex, String targetValue) 
+	 {
+		 try  
+		 {
+			 	CSVReader reader = new CSVReader(new FileReader(pathToFile));
+	            List<String[]> rows = reader.readAll();
+	            for(String[] lineData : rows)
+	            {
+	            	if(lineData[columnIndex].replace("\"", "").equals(targetValue))
+	            	{
+	            		 logger.info("record exist for "+targetValue+"in "+pathToFile);
+	            		return true;
+	            	}
+	            }
+	            
+	     }
+		 catch (Exception e) 
+		 {
+			 logger.info(e.getMessage());
+		 }
+	     
+		 return false;
+	 }
 
 }

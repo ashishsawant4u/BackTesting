@@ -8,6 +8,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -64,6 +65,7 @@ public class Utils {
 	{	
 		List<StockPrice> candleList = readUsingCSVFile(instrument);
 		
+		Collections.sort(candleList, (c1, c2) -> c1.getMarketDate().compareTo(c2.getMarketDate()));
 		 
 		 if(null!=fromDate)
 		 {
@@ -95,15 +97,25 @@ public class Utils {
 			    	{
 			    		 	String[] lineData = line.split(COMMA_DELIMITER);
 					        
-			            	Date currentDate = new SimpleDateFormat("yyyy-MM-dd").parse(lineData[0]);  
-			            
+//			            	Date currentDate = new SimpleDateFormat("yyyy-MM-dd").parse(lineData[0]);  
+//			            
+//			            	StockPrice candle = new StockPrice();
+//			            	candle.setSymbol(instrument);
+//			            	candle.setMarketDate(currentDate);
+//			            	candle.setOpenPrice(Float.parseFloat(lineData[4]));
+//			            	candle.setHighPrice(Float.parseFloat(lineData[5]));
+//			            	candle.setLowPrice(Float.parseFloat(lineData[6]));
+//			            	candle.setClosePrice(Float.parseFloat(lineData[8]));
+			    		 	
+			    		 	Date marketDate = new SimpleDateFormat("dd-MMM-yyyy").parse(lineData[5].replace("\"", ""));  
+				            
 			            	StockPrice candle = new StockPrice();
 			            	candle.setSymbol(instrument);
-			            	candle.setMarketDate(currentDate);
-			            	candle.setOpenPrice(Float.parseFloat(lineData[4]));
-			            	candle.setHighPrice(Float.parseFloat(lineData[5]));
-			            	candle.setLowPrice(Float.parseFloat(lineData[6]));
-			            	candle.setClosePrice(Float.parseFloat(lineData[8]));
+			            	candle.setMarketDate(marketDate);
+			            	candle.setOpenPrice(Float.parseFloat(lineData[1].replace("\"", "")));
+			            	candle.setHighPrice(Float.parseFloat(lineData[2].replace("\"", "")));
+			            	candle.setLowPrice(Float.parseFloat(lineData[3].replace("\"", "")));
+			            	candle.setClosePrice(Float.parseFloat(lineData[4].replace("\"", "")));
 			            	
 			            	candleList.add(candle);	
 			    	}
@@ -144,7 +156,6 @@ public class Utils {
 			
 		}
 		System.out.println("candlesData size "+candlesData.size());
-		
 		
 		return candlesData;
 	}

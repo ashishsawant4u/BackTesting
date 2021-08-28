@@ -10,7 +10,8 @@ public class StockConstants {
 	public static int RISING_MARGIN_MIN_SCALE = 50;
 	
 	//public static String CSV_FILE_LOC = "C:\\Users\\ashis\\Downloads\\archive-eod\\";
-	public static String CSV_FILE_LOC = "C:\\Users\\ashis\\Downloads\\archive\\Datasets\\SCRIP\\";
+	//public static String CSV_FILE_LOC = "C:\\Users\\ashis\\Downloads\\archive\\Datasets\\SCRIP\\";
+	public static String CSV_FILE_LOC = "C:\\Users\\ashis\\Downloads\\archive\\Datasets\\SCRIP\\data-symbol\\";
 	
 	//moving average should be rising for number of candles
 	public static int RISING_PRICE_MIN_SCALE = 15;
