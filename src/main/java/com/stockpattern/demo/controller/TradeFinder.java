@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.stockpattern.demo.apis.NseSiteAPIService;
 import com.stockpattern.demo.apis.StockNoteAPIService;
+import com.stockpattern.demo.indicators.StockConstants;
 import com.stockpattern.demo.models.StockPrice;
 import com.stockpattern.demo.strategy.TradeFinderService;
 
@@ -46,6 +47,23 @@ public class TradeFinder
 		model.addAttribute("potentialTradesList", potentialTradesList);
 		
 		return "ma44rising90TradesPage";
+	}
+	
+	@RequestMapping("/rising90ma/{sma}/{date}")
+	public String findTradesRising90ForGivenSMA(Model model,@PathVariable("sma") String sma,@PathVariable("date") String date)  throws Exception
+	{
+		SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+		
+		Date forDate = dateFormat.parse(date);
+		
+		StockConstants.MOVING_AVERAGE_SCALE = Integer.parseInt(sma);
+		
+		List<StockPrice> potentialTradesList =  tradeFinderService.findTradesForMA44Rising90ForDate(forDate);
+		
+		model.addAttribute("simpleMovingAvg", sma);
+		model.addAttribute("potentialTradesList", potentialTradesList);
+		
+		return "rising90ForSMATradesPage";
 	}
 	
 	@RequestMapping("/nseeodata")

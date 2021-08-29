@@ -313,7 +313,7 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 						    	{
 						    		 	String[] lineData = line.split(COMMA_DELIMITER);
 								        
-						    		 	if(lineData[1].equals("EQ"))
+						    		 	//if(lineData[1].equals("EQ"))
 						    		 	{
 						    		 		String symbol = lineData[0];
 						    		 		String open = lineData[2];
@@ -473,7 +473,7 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 						    	{
 						    		 	String[] lineData = line.split(COMMA_DELIMITER);
 								        
-						    		 	if(lineData[1].equals("EQ"))
+						    		 	//if(lineData[1].equals("EQ"))
 						    		 	{
 						    		 		String symbol = lineData[0];
 						    		 		String open = lineData[2];

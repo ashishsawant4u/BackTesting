@@ -35,7 +35,7 @@ public class TradeFinderServiceImpl implements TradeFinderService {
 	public List<StockPrice> findTradesForMA44Rising90ForDate(Date date) 
 	{
 		
-		 int averageScale = 44;
+		 int averageScale = StockConstants.MOVING_AVERAGE_SCALE;
 		 
 		 StockConstants.RISING_PRICE_MIN_SCALE = 90;
 		 
@@ -89,7 +89,7 @@ public class TradeFinderServiceImpl implements TradeFinderService {
 	
 	private List<String> getShortlistedMA44Rising90Stocks() throws Exception 
 	{
-		  File shortlistedile = ResourceUtils.getFile("classpath:Nifty500-tops-MA44-Trades.txt");
+		  File shortlistedile = ResourceUtils.getFile("classpath:Shortlisted-Stocks-MA-"+StockConstants.MOVING_AVERAGE_SCALE+".txt");
 		  
 		  List<String> lines = Collections.emptyList();
 		  lines = Files.readAllLines(Paths.get(shortlistedile.getPath()));

@@ -8,7 +8,7 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-<title>BacktestTrades</title>
+<title>BacktestTrades-MA-${simpleMovingAvg}</title>
 </head>
 <body>
 <tags:scripts/>
@@ -23,7 +23,8 @@
 		Total Trades Found : <span class="badge rounded-pill bg-dark">${totalNoOfTrades}</span>
 		Target Exit Count : <span class="badge rounded-pill bg-dark">${totalTargetExitCount}</span>
 		Stop Loss Count :  <span class="badge rounded-pill bg-dark">${totalStopLossCount}</span>
-		Profitable Trades > 9 For Symbol : <span class="badge rounded-pill bg-dark">${profitabelTradesMoreThan9}</span>
+		<%-- Profitable Trades > 9 For Symbol : <span class="badge rounded-pill bg-dark">${profitabelTradesMoreThan9}</span> --%>
+		Open Trades Count : <span class="badge rounded-pill bg-dark">${openTradesCount}</span>
   </div>
 </div>
 

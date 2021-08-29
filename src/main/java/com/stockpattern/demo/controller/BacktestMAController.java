@@ -143,7 +143,7 @@ public class BacktestMAController {
 							tradeResults.setTradesCount(candlesWithEntryExit.size());
 							tradeResults.setTargetExistCount(targetExistCount);
 							tradeResults.setStopLossCount(stopLossCount);
-							tradeResults.setProfitableTrades((targetExistCount*2)-stopLossCount);	
+							tradeResults.setProfitableTrades(targetExistCount-stopLossCount);	
 							tradeResultsList.add(tradeResults);	
 					  }
 				  }
@@ -172,7 +172,7 @@ public class BacktestMAController {
 		
 		model.addAttribute("totalTargetExitCount",tradeList.stream().filter(t->null!=t.getTradeEntry().getTradeStatus()).filter(t->t.getTradeEntry().getTradeStatus().equals(StockConstants.TARGET_EXIT)).collect(Collectors.toList()).size());
 		model.addAttribute("totalStopLossCount",tradeList.stream().filter(t->null!=t.getTradeEntry().getTradeStatus()).filter(t->t.getTradeEntry().getTradeStatus().equals(StockConstants.STOP_LOSS)).collect(Collectors.toList()).size());
-
+		model.addAttribute("openTradesCount",tradeList.stream().filter(t->!t.isExit()).collect(Collectors.toList()).size());
 	}
 
 	private List<YearlyReport> prepareYearlyTradingReport(List<MonthlyReport> monthlyReportList) throws ParseException 
@@ -268,7 +268,7 @@ public class BacktestMAController {
 
 	private List<String> getShortlistedStocks() throws Exception 
 	{
-		  File shortlistedile = ResourceUtils.getFile("classpath:Nifty500-tops-MA44.txt");
+		  File shortlistedile = ResourceUtils.getFile("classpath:Shortlisted-Stocks-MA-"+StockConstants.MOVING_AVERAGE_SCALE+".txt");
 		  
 		  List<String> lines = Collections.emptyList();
 		  lines = Files.readAllLines(Paths.get(shortlistedile.getPath()));

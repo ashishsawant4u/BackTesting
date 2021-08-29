@@ -7,14 +7,14 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-<title>MA44-Rising90-Trades</title>
+<title>Rising90-SMA${simpleMovingAvg}-Trades</title>
 </head>
 <body>
 
 <tags:scripts/>
 
 <div class="container">
-	<h1>Trade Finder MA44 Rising90</h1>
+	<h1>Trade Finder SMA${simpleMovingAvg} Rising90</h1>
 </div>
 
 <table class="table table-bordered table-hover" id="tradeListTable">

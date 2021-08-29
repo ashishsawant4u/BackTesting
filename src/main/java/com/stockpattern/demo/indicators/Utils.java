@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -502,5 +503,44 @@ public class Utils {
 		}
 		
 		return entryMargin;
+	}
+	
+	public static String getSymbolForCompanyName(String companyName)
+	{
+		String COMMA_DELIMITER = ",";
+		
+		String equitySymbolFile = "C:\\Users\\ashis\\Downloads\\archive\\Datasets\\EQUITY_LIST.csv";
+		
+		int count = 0;
+		try 
+		{
+			
+			BufferedReader br = new BufferedReader(new FileReader(equitySymbolFile));
+			    String line;
+			    while ((line = br.readLine()) != null) {
+			    	
+			    	if(count != 0)
+			    	{
+			    		 	String[] lineData = line.split(COMMA_DELIMITER);
+					        
+			            	String name = lineData[1].replace("\"", "");
+			            	if(StringUtils.containsIgnoreCase(name, companyName) || StringUtils.containsIgnoreCase(name,companyName.split(" ")[0]))
+			            	{
+			            		return lineData[0].replace("\"", "");
+			            	}
+			    	}
+			       
+			    	count++;
+			        
+			    }
+			
+			
+		} 
+		catch (Exception e) {
+			System.out.println("Exception while reading CSV "+e);
+		}
+		
+		return null;
+			
 	}
 }
