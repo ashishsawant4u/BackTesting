@@ -66,6 +66,23 @@ public class TradeFinder
 		return "rising90ForSMATradesPage";
 	}
 	
+	@RequestMapping("/volatileRising90ma/{sma}/{date}")
+	public String findTradesRising90ForGivenSMAForVolatile(Model model,@PathVariable("sma") String sma,@PathVariable("date") String date)  throws Exception
+	{
+		SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+		
+		Date forDate = dateFormat.parse(date);
+		
+		StockConstants.MOVING_AVERAGE_SCALE = Integer.parseInt(sma);
+		
+		List<StockPrice> potentialTradesList =  tradeFinderService.findTradesForMARising90ForDateForVolatileStocks(forDate);
+		
+		model.addAttribute("simpleMovingAvg", sma);
+		model.addAttribute("potentialTradesList", potentialTradesList);
+		
+		return "rising90ForSMATradesPage";
+	}
+	
 	@RequestMapping("/nseeodata")
 	@ResponseBody
 	public String fetchNseEoddata(Model model)  throws Exception

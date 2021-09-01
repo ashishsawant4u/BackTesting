@@ -1,12 +1,6 @@
 package com.stockpattern.demo.controller;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,15 +8,8 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -33,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -45,44 +31,34 @@ import com.stockpattern.demo.models.TradeResults;
 import com.stockpattern.demo.models.YearlyReport;
 import com.stockpattern.demo.strategy.StockPatternStrategy;
 
-
 @Controller
-@RequestMapping("/backtestma")
-public class BacktestMAController {
+@RequestMapping("/backtestshorting")
+public class BackTestSMAShortingController 
+{
+	Logger logger = LoggerFactory.getLogger(BackTestSMAShortingController.class);
 	
-	
-	Logger logger = LoggerFactory.getLogger(BacktestMAController.class);
-
-
 	@Resource(name = "stockPatternStrategy")
 	StockPatternStrategy stockPatternStrategy;
 	
 	List<StockPrice>  tradeList = new ArrayList<StockPrice>();
-
 	
-	@RequestMapping("/scale/{scale}/{symbol}/{sma}")
-	public String getLandingPage2(@PathVariable("scale") String scale,@PathVariable("symbol") String symbol,@PathVariable("sma") String sma,Model model) throws Exception
+	@RequestMapping("/shortingsma/{symbol}/{sma}")
+	public String backTestSMAShorting(@PathVariable("symbol") String symbol,@PathVariable("sma") String sma,Model model)  throws Exception
 	{
-		logger.info("STOCKPATTERN.......");
-		
 		resetData();
-		
-		Calendar cal = Calendar.getInstance();  
-		cal.setTime(new Date());
-		cal.add(Calendar.YEAR, -3); 
-		Date fromDate = cal.getTime();
-		
-		if(null!=scale && !sma.equalsIgnoreCase("default"))
-		{	
-			StockConstants.RISING_PRICE_MIN_SCALE = Integer.parseInt(scale);
-		}
-		
+
 		if(null!=sma && !sma.equalsIgnoreCase("default"))
 		{
 			StockConstants.MOVING_AVERAGE_SCALE = Integer.parseInt(sma);
 		}
-		 
-	
+		
+		StockConstants.RISING_PRICE_MIN_SCALE = 2;
+		
+		Calendar cal = Calendar.getInstance();  
+		cal.setTime(new Date());
+		cal.add(Calendar.YEAR, -2); 
+		Date fromDate =  cal.getTime();
+		
 		List<TradeResults> tradeResultsList = backTestTradeResults(fromDate,symbol);
 		
 		List<TradeResults>  sortedList = tradeResultsList.stream()
@@ -90,20 +66,11 @@ public class BacktestMAController {
 		        .collect(Collectors.toList());
 		
 		model.addAttribute("simpleMovingAvg", sma);
-		model.addAttribute("risingScale", scale);
+		model.addAttribute("fallingScale", StockConstants.RISING_PRICE_MIN_SCALE);
 		model.addAttribute("tradeResults", sortedList);
-		model.addAttribute("profitabelTradesMoreThan9", sortedList.stream().filter(t->t.getProfitableTrades()>9).collect(Collectors.counting()));
 		model.addAttribute("totalNoOfTrades", tradeList.size());
-		
-		
 		prepareReportForDispaly(model);
-		return "landingPage";
-	}
-
-	private void resetData() 
-	{
-		tradeList.clear();
-		QuantityPlanner.monthlyTradeAmountTrackerMap.clear();
+		return "shortingSmaPage";
 	}
 	
 	private List<TradeResults> backTestTradeResults(Date fromDate,String instrument) throws Exception
@@ -121,13 +88,13 @@ public class BacktestMAController {
 		  
 				  String symbol = file.getName().replace(".csv", "");
 				  
-				  List<String> shortListedStocks = getShortlistedStocks();
+				 // List<String> shortListedStocks = getShortlistedStocks();
 				  
 				  boolean process = (null==instrument || instrument.equalsIgnoreCase("default") || symbol.equalsIgnoreCase(instrument)) ? true  : false;
 				  //&& shortListedStocks.contains(symbol)
-				  if(process && shortListedStocks.contains(symbol))
+				  if(process )
 				  {
-					  List<StockPrice>  candlesWithEntryExit =  stockPatternStrategy.backTestMovingAverage(symbol,fromDate, StockConstants.MOVING_AVERAGE_SCALE);
+					  List<StockPrice>  candlesWithEntryExit =  stockPatternStrategy.backTestMovingAverageForShorting(symbol,fromDate, StockConstants.MOVING_AVERAGE_SCALE);
 					  
 					  tradeList.addAll(candlesWithEntryExit);
 					  
@@ -156,6 +123,12 @@ public class BacktestMAController {
 		  tradeResultsList.forEach(trades->logger.info(trades.getInstrument()+"|"+trades.getTradesCount()+"|"+trades.getTargetExistCount()+"|"+trades.getStopLossCount()+"|"+trades.getProfitableTrades()));
 		  
 		  return tradeResultsList;
+	}
+	
+	private void resetData() 
+	{
+		tradeList.clear();
+		QuantityPlanner.monthlyTradeAmountTrackerMap.clear();
 	}
 	
 	private void prepareReportForDispaly(Model model)  throws Exception
@@ -266,17 +239,4 @@ public class BacktestMAController {
 		Collections.reverse(monthlyReportList);
 		return monthlyReportList;
 	}
-	
-
-	private List<String> getShortlistedStocks() throws Exception 
-	{
-		  File shortlistedile = ResourceUtils.getFile("classpath:Shortlisted-Stocks-MA-"+StockConstants.MOVING_AVERAGE_SCALE+".txt");
-		  
-		  List<String> lines = Collections.emptyList();
-		  lines = Files.readAllLines(Paths.get(shortlistedile.getPath()));
-		  
-		  //lines.forEach(l->logger.info(l));
-		  return lines;
-	}
-	
 }

@@ -18,6 +18,8 @@ public class StockConstants {
 	
 	public static int MIN_BODY_SIZE_GREEN_CANDLE_FOR_BUY = 1;
 	
+	public static int MIN_BODY_SIZE_RED_CANDLE_FOR_SHORT = 1;
+	
 	public static float ENTRY_MARGIN = 0.5F;
 	
 	public static int MOVING_AVERAGE_SCALE = 50;

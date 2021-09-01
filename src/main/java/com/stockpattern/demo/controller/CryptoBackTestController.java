@@ -1,12 +1,8 @@
 package com.stockpattern.demo.controller;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
+import java.io.FileReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,15 +10,8 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -33,56 +22,47 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.stockpattern.demo.indicators.Indicators;
 import com.stockpattern.demo.indicators.QuantityPlanner;
 import com.stockpattern.demo.indicators.StockConstants;
+import com.stockpattern.demo.indicators.Utils;
 import com.stockpattern.demo.models.MonthlyReport;
 import com.stockpattern.demo.models.StockPrice;
 import com.stockpattern.demo.models.TradeResults;
 import com.stockpattern.demo.models.YearlyReport;
 import com.stockpattern.demo.strategy.StockPatternStrategy;
 
-
 @Controller
-@RequestMapping("/backtestma")
-public class BacktestMAController {
+@RequestMapping("/backtestcrypto")
+public class CryptoBackTestController {
 	
+	Logger logger = LoggerFactory.getLogger(CryptoBackTestController.class);
 	
-	Logger logger = LoggerFactory.getLogger(BacktestMAController.class);
-
-
 	@Resource(name = "stockPatternStrategy")
 	StockPatternStrategy stockPatternStrategy;
 	
 	List<StockPrice>  tradeList = new ArrayList<StockPrice>();
 
-	
-	@RequestMapping("/scale/{scale}/{symbol}/{sma}")
-	public String getLandingPage2(@PathVariable("scale") String scale,@PathVariable("symbol") String symbol,@PathVariable("sma") String sma,Model model) throws Exception
+	@RequestMapping("/smacrypto/{symbol}/{sma}")
+	public String backTestSMACrypto(@PathVariable("symbol") String symbol,@PathVariable("sma") String sma,Model model)  throws Exception
 	{
-		logger.info("STOCKPATTERN.......");
-		
 		resetData();
-		
-		Calendar cal = Calendar.getInstance();  
-		cal.setTime(new Date());
-		cal.add(Calendar.YEAR, -3); 
-		Date fromDate = cal.getTime();
-		
-		if(null!=scale && !sma.equalsIgnoreCase("default"))
-		{	
-			StockConstants.RISING_PRICE_MIN_SCALE = Integer.parseInt(scale);
-		}
-		
+
 		if(null!=sma && !sma.equalsIgnoreCase("default"))
 		{
 			StockConstants.MOVING_AVERAGE_SCALE = Integer.parseInt(sma);
 		}
-		 
-	
+		
+		StockConstants.RISING_PRICE_MIN_SCALE = 90;
+		
+		Calendar cal = Calendar.getInstance();  
+		cal.setTime(new Date());
+		cal.add(Calendar.YEAR, -2); 
+		Date fromDate =  cal.getTime();
+		
 		List<TradeResults> tradeResultsList = backTestTradeResults(fromDate,symbol);
 		
 		List<TradeResults>  sortedList = tradeResultsList.stream()
@@ -90,27 +70,20 @@ public class BacktestMAController {
 		        .collect(Collectors.toList());
 		
 		model.addAttribute("simpleMovingAvg", sma);
-		model.addAttribute("risingScale", scale);
+		model.addAttribute("risingScale", StockConstants.RISING_PRICE_MIN_SCALE);
 		model.addAttribute("tradeResults", sortedList);
 		model.addAttribute("profitabelTradesMoreThan9", sortedList.stream().filter(t->t.getProfitableTrades()>9).collect(Collectors.counting()));
 		model.addAttribute("totalNoOfTrades", tradeList.size());
 		
-		
 		prepareReportForDispaly(model);
 		return "landingPage";
-	}
-
-	private void resetData() 
-	{
-		tradeList.clear();
-		QuantityPlanner.monthlyTradeAmountTrackerMap.clear();
 	}
 	
 	private List<TradeResults> backTestTradeResults(Date fromDate,String instrument) throws Exception
 	{
 		  List<TradeResults> tradeResultsList = new ArrayList<TradeResults>();
 		
-		  String CSV_FILE_LOC = StockConstants.CSV_FILE_LOC;
+		  String CSV_FILE_LOC = "C:\\Users\\ashis\\Downloads\\crypto-eod\\";
 		  
 		  File[] files = new File(CSV_FILE_LOC).listFiles();
 		  
@@ -119,15 +92,15 @@ public class BacktestMAController {
 			  if (file.isFile()) 
 			  {
 		  
-				  String symbol = file.getName().replace(".csv", "");
+				  String symbol = file.getName().replace(".csv", "").replace("coin_", "");
 				  
-				  List<String> shortListedStocks = getShortlistedStocks();
+				 // List<String> shortListedStocks = getShortlistedStocks();
 				  
 				  boolean process = (null==instrument || instrument.equalsIgnoreCase("default") || symbol.equalsIgnoreCase(instrument)) ? true  : false;
 				  //&& shortListedStocks.contains(symbol)
-				  if(process && shortListedStocks.contains(symbol))
+				  if(process )
 				  {
-					  List<StockPrice>  candlesWithEntryExit =  stockPatternStrategy.backTestMovingAverage(symbol,fromDate, StockConstants.MOVING_AVERAGE_SCALE);
+					  List<StockPrice>  candlesWithEntryExit =  backTestMovingAverageForCrypto(symbol,fromDate, StockConstants.MOVING_AVERAGE_SCALE);
 					  
 					  tradeList.addAll(candlesWithEntryExit);
 					  
@@ -156,6 +129,115 @@ public class BacktestMAController {
 		  tradeResultsList.forEach(trades->logger.info(trades.getInstrument()+"|"+trades.getTradesCount()+"|"+trades.getTargetExistCount()+"|"+trades.getStopLossCount()+"|"+trades.getProfitableTrades()));
 		  
 		  return tradeResultsList;
+	}
+	
+	private void resetData() 
+	{
+		tradeList.clear();
+		QuantityPlanner.monthlyTradeAmountTrackerMap.clear();
+	}
+	
+	public List<StockPrice> backTestMovingAverageForCrypto(String instrument,Date fromDate,int averageScale)
+	{
+		List<StockPrice> stockPriceListData = getCandlesData(instrument, fromDate);
+		
+		List<StockPrice>  stockPriceWithMA = Utils.getCandlesDataForGivenScale(stockPriceListData, averageScale);
+		
+		//Finding Support
+		stockPriceWithMA.stream().forEach(candle -> candle.setHasSupport(Indicators.hasSupport(candle, StockConstants.SUPPORT_PRICE_DIFFERENCE)));
+		
+		//Finding Candle Type RED/GREEN
+		stockPriceWithMA.stream().forEach(candle -> candle.setGreenCandle(Indicators.isGreenCandleWithGoodBody(candle)));
+		
+		//Utils.prepareEntryCandles(stockPriceWithMA);
+		
+		//Consolidating green candles with support
+		List<StockPrice>  stockPriceGreenAndSupportWithMA = stockPriceWithMA.stream().filter(candle-> candle.isGreenCandle() && candle.isHasSupport()).collect(Collectors.toList());
+		
+		//Finding green candle with rising MA and support
+		stockPriceGreenAndSupportWithMA.forEach(candle->{
+			candle.setMARising(true);
+							});
+		
+		//Consolidating green candles with support and MA Rising
+		List<StockPrice>  stockPriceGreenAndSupportWithMARising = stockPriceGreenAndSupportWithMA.stream().filter(candle->candle.isMARising()).collect(Collectors.toList());
+		
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
+		//Marking Entry
+		stockPriceGreenAndSupportWithMARising.forEach(candle->{
+			
+			String month =  sdf.format(candle.getMarketDate());
+			//Buy only if monthly trade budget not exhausted
+			if(null==QuantityPlanner.monthlyTradeAmountTrackerMap.get(month) || QuantityPlanner.monthlyTradeAmountTrackerMap.get(month) < QuantityPlanner.MAX_TRADE_AMOUNT_PER_MONTH)
+			{
+				Utils.setBuyEntry(candle);
+			}
+			
+		});
+		
+		List<StockPrice> withingBudgetExecutedTrades = stockPriceGreenAndSupportWithMARising.stream().filter(c->c.isEntry()).collect(Collectors.toList());
+		
+		withingBudgetExecutedTrades.forEach(candle->Utils.setExit(candle, stockPriceWithMA));
+		
+		return withingBudgetExecutedTrades;
+	}
+	
+	public List<StockPrice>  getCandlesData(String instrument,Date fromDate)
+	{	
+		List<StockPrice> candleList = readUsingCSVFile(instrument);
+		
+		Collections.sort(candleList, (c1, c2) -> c1.getMarketDate().compareTo(c2.getMarketDate()));
+		 
+		 if(null!=fromDate)
+		 {
+			 return candleList.stream().filter(s->!s.getMarketDate().before(fromDate)).collect(Collectors.toList());
+		 }
+		
+		 return candleList;
+	}
+	
+	private static List<StockPrice> readUsingCSVFile (String instrument)
+	{
+		String COMMA_DELIMITER = ",";
+		List<StockPrice> candleList = new ArrayList<StockPrice>();
+		String FILE_LOC = "C:\\Users\\ashis\\Downloads\\crypto-eod\\coin_";
+		int count = 0;
+		try 
+		{
+			
+			BufferedReader br = new BufferedReader(new FileReader(FILE_LOC+instrument+".csv"));
+			    String line;
+			    while ((line = br.readLine()) != null) {
+			    	
+			    	if(count != 0)
+			    	{
+			    		 	String[] lineData = line.split(COMMA_DELIMITER);
+			    		 	
+			    		 	Date marketDate = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse(lineData[3].replace("\"", ""));  
+				            
+			            	StockPrice candle = new StockPrice();
+			            	candle.setSymbol(instrument);
+			            	candle.setMarketDate(marketDate);
+			            	candle.setOpenPrice(Float.parseFloat(lineData[6].replace("\"", "")));
+			            	candle.setHighPrice(Float.parseFloat(lineData[4].replace("\"", "")));
+			            	candle.setLowPrice(Float.parseFloat(lineData[5].replace("\"", "")));
+			            	candle.setClosePrice(Float.parseFloat(lineData[7].replace("\"", "")));
+			            	
+			            	candleList.add(candle);	
+			    	}
+			       
+			    	count++;
+			        
+			    }
+			
+			
+		} 
+		catch (Exception e) {
+			System.out.println("Exception while reading CSV "+e);
+		}
+		
+		return candleList;
 	}
 	
 	private void prepareReportForDispaly(Model model)  throws Exception
@@ -266,17 +348,4 @@ public class BacktestMAController {
 		Collections.reverse(monthlyReportList);
 		return monthlyReportList;
 	}
-	
-
-	private List<String> getShortlistedStocks() throws Exception 
-	{
-		  File shortlistedile = ResourceUtils.getFile("classpath:Shortlisted-Stocks-MA-"+StockConstants.MOVING_AVERAGE_SCALE+".txt");
-		  
-		  List<String> lines = Collections.emptyList();
-		  lines = Files.readAllLines(Paths.get(shortlistedile.getPath()));
-		  
-		  //lines.forEach(l->logger.info(l));
-		  return lines;
-	}
-	
 }

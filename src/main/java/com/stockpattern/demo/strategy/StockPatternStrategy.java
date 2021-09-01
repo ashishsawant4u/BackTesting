@@ -9,4 +9,5 @@ public interface StockPatternStrategy {
 	
 	public List<StockPrice> backTestMovingAverage(String symbol,Date fromDate,int averageScale);
 
+	public List<StockPrice> backTestMovingAverageForShorting(String symbol,Date fromDate,int averageScale);
 }

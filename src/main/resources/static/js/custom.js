@@ -67,6 +67,16 @@ $( document ).ready(function() {
     	});
 
 		
+		$('#ipoHistoricalData').DataTable({
+		        dom: 'Bfrtip',
+		        buttons: [
+		            'copyHtml5',
+		            'excelHtml5',
+		            'csvHtml5'
+		        ],
+				"paging":   false,
+				"ordering": false,
+    	});
 
 });
 

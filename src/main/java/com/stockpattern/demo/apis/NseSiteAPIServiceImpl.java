@@ -416,7 +416,7 @@ public class NseSiteAPIServiceImpl implements NseSiteAPIService
 			LocalDate start = previousDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 			LocalDate end = currentDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 			
-			for (LocalDate ld = start; ld.isBefore(end); ld = ld.plusDays(1)) 
+			for (LocalDate ld = start; ld.isBefore(end) || ld.equals(end); ld = ld.plusDays(1)) 
 			{
 				String marketDateStr = ld.getDayOfMonth()+""+ld.getMonthValue()+""+ld.getYear();
 				Date marketDate = Date.from(ld.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());

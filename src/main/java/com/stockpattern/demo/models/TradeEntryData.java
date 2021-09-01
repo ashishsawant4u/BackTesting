@@ -21,6 +21,10 @@ public class TradeEntryData {
 	float investment;
 	
 	String tradeStatus;
+	
+	float shortEntryPrice;
+	
+	float shortTargetPrice;
 
 	public float getBuyPrice() {
 		return buyPrice;
@@ -94,12 +98,30 @@ public class TradeEntryData {
 		this.tradeStatus = tradeStatus;
 	}
 
+	public float getShortEntryPrice() {
+		return shortEntryPrice;
+	}
+
+	public void setShortEntryPrice(float shortEntryPrice) {
+		this.shortEntryPrice = shortEntryPrice;
+	}
+
+	public float getShortTargetPrice() {
+		return shortTargetPrice;
+	}
+
+	public void setShortTargetPrice(float shortTargetPrice) {
+		this.shortTargetPrice = shortTargetPrice;
+	}
+
 	@Override
 	public String toString() {
 		return "TradeEntryData [buyPrice=" + buyPrice + ", stopLossPrice=" + stopLossPrice + ", targetPrice="
 				+ targetPrice + ", lossPerUnit=" + lossPerUnit + ", quantity=" + quantity + ", tradeDuration="
 				+ tradeDuration + ", tradeExitDate=" + tradeExitDate + ", investment=" + investment + ", tradeStatus="
-				+ tradeStatus + "]";
+				+ tradeStatus + ", shortEntryPrice=" + shortEntryPrice + ", shortTargetPrice=" + shortTargetPrice + "]";
 	}
+
+	
 	
 }

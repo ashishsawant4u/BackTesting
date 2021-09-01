@@ -87,5 +87,23 @@ public class Indicators {
 		
 		return false;
 	}
+	
+	public static boolean isRedCandleWithGoodBody(StockPrice candle)
+	{
+		
+		if(isRedCandle(candle))
+		{
+			float bodySize = candle.getOpenPrice() - candle.getClosePrice();
+			
+			boolean goodbodySize = (bodySize >= StockConstants.MIN_BODY_SIZE_RED_CANDLE_FOR_SHORT);
+			
+			float highWickSize = candle.getHighPrice() - candle.getOpenPrice();
+			float lowWickSize = candle.getClosePrice() - candle.getLowPrice();
+			
+			return goodbodySize && (bodySize>highWickSize) && (bodySize>lowWickSize);
+		}
+		
+		return false;
+	}
 
 }

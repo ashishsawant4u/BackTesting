@@ -82,13 +82,15 @@ public class IPOController
 				            	
 				            	Calendar cal = Calendar.getInstance();  
 				        		cal.setTime(listingDate);
-				        		cal.add(Calendar.MONDAY, 6); 
-				        		Date futureDate = cal.getTime();
+				        		cal.add(Calendar.MONTH, 6); 
+				        		Date futureDate =  cal.getTime().after(new Date()) ? new Date() : cal.getTime();
+				        		
 				            	
 				        		ipoHistoricalData.setFutureDate(futureDate);
 				        		
-				        		String symbol = Utils.getSymbolForCompanyName(lineData[1].replace("\"", ""));
-				        		
+				        		//String symbol = Utils.getSymbolForCompanyName(lineData[1].replace("\"", ""));
+				        		String symbol = lineData[13].replace("\"", "");
+				        				
 				        		if(StringUtils.isNotBlank(symbol))
 				        		{
 				        			ipoHistoricalData.setSymbol(symbol);
@@ -98,19 +100,31 @@ public class IPOController
 				        			if(CollectionUtils.isNotEmpty(candleList))
 				        			{
 				        				Optional<StockPrice> matchedCandle = candleList.stream().filter(c->c.getMarketDate().equals(futureDate)).findFirst();
+				        				if(!matchedCandle.isPresent())
+				        				{
+				        					Calendar cal2 = Calendar.getInstance();  
+							        		cal2.setTime(futureDate);
+							        		cal2.add(Calendar.DATE, 3); 
+				        					
+				        					matchedCandle = candleList.stream().filter(c->c.getMarketDate().equals(cal2.getTime())).findFirst();
+				        				}
 				        				
 				        				if(matchedCandle.isPresent())
 				        				{
 				        					float futurePrice = matchedCandle.get().getOpenPrice(); 
 									        		
 								        	ipoHistoricalData.setFuturePrice(futurePrice);
-								        	ipoHistoricalData.setFutureGainPecentage((futurePrice/ipoHistoricalData.getListingClosePrice())*100);
+								        	ipoHistoricalData.setFutureGainPecentage(((futurePrice-ipoHistoricalData.getListingClosePrice())/ipoHistoricalData.getListingClosePrice())*100);
 				        				}
 				        				
 				        			}
 				        		}
 				        		
-				            	ipoList.add(ipoHistoricalData);
+				        		SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy");
+				        		if(ipoHistoricalData.getFutureDate().before(new Date()) && !sdf.format(ipoHistoricalData.getFutureDate()).equals(sdf.format(new Date())))
+				        		{	
+				        			ipoList.add(ipoHistoricalData);
+				        		}
 			            	}
 			    	}
 			       

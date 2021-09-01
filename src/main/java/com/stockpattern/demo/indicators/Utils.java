@@ -212,13 +212,17 @@ public class Utils {
 			List<Float> movingAverages = candlesDataBeforeDateForNoOfDays.stream().map(s->s.getMovingAverage()).collect(Collectors.toList());
 			
 			//boolean isRising = isRisingLogic1(candleData, movingAverages);
-			boolean isRising = isRisingLogic2(candleData, movingAverages);
+			boolean isRising = isRisingLogic90(candleData, movingAverages);
 			
 			//Ordering.natural().isOrdered(movingAverages);
 			if(isRising)
 			{
 				//logger.info("RISING >> ==================================================="+new SimpleDateFormat("dd-MMM-yyy").format(candleData.getMarketDate()));
 				//movingAverages.forEach(p->logger.info(p.toString()));
+			}
+			else
+			{
+				isRising = isRisingLogic60(candleData, movingAverages);
 			}
 			
 			return isRising;
@@ -244,7 +248,7 @@ public class Utils {
 		return isRising;
 	}
 	
-	private static boolean isRisingLogic2(StockPrice candleData, List<Float> movingAverages) 
+	private static boolean isRisingLogic90(StockPrice candleData, List<Float> movingAverages) 
 	{
 		boolean isRising = false;
 	
@@ -277,6 +281,100 @@ public class Utils {
 		return isRising;
 	}
 	
+	private static boolean isRisingLogic60(StockPrice candleData, List<Float> movingAverages) 
+	{
+		boolean isRising = false;
+	
+		
+		
+		//float previous90thCandleMA = movingAverages.get(0);
+		float previous60thCandleMA = movingAverages.get(movingAverages.size()-60);
+		float previous45thCandleMA = movingAverages.get(movingAverages.size()-45);
+		float previous30thCandleMA = movingAverages.get(movingAverages.size()-30);
+		float previous15thCandleMA = movingAverages.get(movingAverages.size()-15);
+		float currentCandleMA = movingAverages.get(89);
+		
+	
+		
+		double risePercentage = (previous60thCandleMA / currentCandleMA)*100;
+		
+		 if((currentCandleMA > previous15thCandleMA) && 
+			(previous15thCandleMA > previous30thCandleMA) &&
+			(previous30thCandleMA > previous45thCandleMA) && 
+			(previous45thCandleMA > previous60thCandleMA) && 
+					(
+							risePercentage < 10 || risePercentage < 20 || risePercentage < 30 || risePercentage < 40 || risePercentage < 50
+ 					)
+		  )
+		 {
+			 isRising = true; 
+		 }
+		
+		return isRising;
+	}
+	
+	
+	
+	public static boolean isFallingMAForCandle(StockPrice candleData,List<StockPrice>  stockPriceWithMA,int scale)
+	{
+		List<StockPrice> candlesDataBeforeDateForNoOfDays = getCandlesForLastNosOfDayForInstrument(candleData, stockPriceWithMA, scale);
+		
+		if(CollectionUtils.isNotEmpty(candlesDataBeforeDateForNoOfDays))
+		{
+			List<Float> movingAverages = candlesDataBeforeDateForNoOfDays.stream().map(s->s.getMovingAverage()).collect(Collectors.toList());
+			
+			
+			boolean isFalling = isFallingLogic2(candleData, movingAverages);
+			
+
+			if(isFalling)
+			{
+				//logger.info("FALLING >> ==================================================="+new SimpleDateFormat("dd-MMM-yyy").format(candleData.getMarketDate()));
+				//movingAverages.forEach(p->logger.info(p.toString()));
+			}
+			
+			return isFalling;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	private static boolean isFallingLogic2(StockPrice candleData, List<Float> movingAverages) 
+	{
+		boolean isFalling = false;
+	
+		
+		
+//		float previous90thCandleMA = movingAverages.get(0);
+//		float previous60thCandleMA = movingAverages.get(movingAverages.size()-60);
+//		float previous45thCandleMA = movingAverages.get(movingAverages.size()-45);
+//		float previous30thCandleMA = movingAverages.get(movingAverages.size()-30);
+//		float previous15thCandleMA = movingAverages.get(movingAverages.size()-15);
+//		float currentCandleMA = movingAverages.get(89);
+		
+		
+		
+		
+		float previous15thCandleMA = movingAverages.get(0);
+		float currentCandleMA = movingAverages.get(1);
+		
+		
+		double fallPercentage = ( currentCandleMA  / previous15thCandleMA )*100;
+		
+		 if((currentCandleMA < previous15thCandleMA) && 
+					(
+							fallPercentage < 10 || fallPercentage < 20 || fallPercentage < 30 || fallPercentage < 40 || fallPercentage < 50
+ 					)
+		  )
+		 {
+			 isFalling = true; 
+		 }
+		
+		return isFalling;
+	}
+	
 	/**
 	 * Marking entry
 	 * @param candle
@@ -307,6 +405,38 @@ public class Utils {
 		candle.setTradeEntry(tradeEntry);
 		
 		candle.setOrderDetails("BUY : "+buyPrice+" STOPLOSS : "+stopLoss+" TARGET : "+targetPrice+" QUANTITY : "+tradeEntry.getQuantity()
+								+"|INVESTMENT|"+tradeEntry.getInvestment());
+		
+		QuantityPlanner.trackTradeAmountForMonth(candle);
+	}
+	
+	public static void setShortEntry(StockPrice candle)
+	{
+		StockConstants.ENTRY_MARGIN = getEntryMargin(candle);
+		
+		candle.setEntry(true);
+		
+		float sellPrice = candle.getLowPrice() - StockConstants.ENTRY_MARGIN;
+		float stopLoss = candle.getHighPrice() + StockConstants.RISK_RATIO;
+		float targetBuyPrice =  sellPrice - ((stopLoss-sellPrice) * StockConstants.REWARD_RATIO);
+				
+				
+		TradeEntryData tradeEntry = new TradeEntryData();
+		tradeEntry.setShortEntryPrice(sellPrice);
+		tradeEntry.setStopLossPrice(stopLoss);
+		tradeEntry.setShortTargetPrice(targetBuyPrice);
+		tradeEntry.setLossPerUnit(stopLoss-sellPrice);
+		
+		
+		candle.setTradeEntry(tradeEntry);
+		
+		tradeEntry.setQuantity(QuantityPlanner.getQuantity(candle));
+		
+		tradeEntry.setInvestment(tradeEntry.getQuantity()*sellPrice);
+		
+		candle.setTradeEntry(tradeEntry);
+		
+		candle.setOrderDetails("SHORT SELL : "+sellPrice+" STOPLOSS : "+stopLoss+" TARGET BUY : "+targetBuyPrice+" QUANTITY : "+tradeEntry.getQuantity()
 								+"|INVESTMENT|"+tradeEntry.getInvestment());
 		
 		QuantityPlanner.trackTradeAmountForMonth(candle);
@@ -377,6 +507,45 @@ public class Utils {
 				entryCandle.getTradeEntry().setTradeExitDate(candle.getMarketDate());
 				entryCandle.getTradeEntry().setTradeDuration(getNosDaysBetweenDates(entryCandle.getMarketDate(), candle.getMarketDate()));
 				entryCandle.setPnlAmount(-((buyPrice-stopLossPrice)*entryCandle.getTradeEntry().getQuantity()));
+				entryCandle.setTradeResult("STOP_LOSS ON "+new SimpleDateFormat("dd-MMM-yyyy").format(candle.getMarketDate())+"|P/L|"+ entryCandle.getPnlAmount());
+				break;
+			}
+			
+		}
+	}
+	
+	public static void setShortExit(StockPrice entryCandle,List<StockPrice>  stockPriceWithMA)
+	{
+		List<StockPrice>  stockPriceList = getCandlesAfter(entryCandle, stockPriceWithMA);
+		
+		StockConstants.ENTRY_MARGIN = getEntryMargin(entryCandle);
+		
+		float sellPrice = entryCandle.getLowPrice() - StockConstants.ENTRY_MARGIN;
+		float stopLoss = entryCandle.getHighPrice() + StockConstants.RISK_RATIO;
+		float targetBuyPrice =  sellPrice - ((stopLoss-sellPrice) * StockConstants.REWARD_RATIO);
+		
+		
+		for(StockPrice candle : stockPriceList)
+		{
+			if(candle.getLowPrice() <= targetBuyPrice && targetBuyPrice <=candle.getHighPrice())
+			{
+				entryCandle.setExit(true);
+				//entryCandle.setPnlAmount(targetPrice-buyPrice);
+				entryCandle.getTradeEntry().setTradeStatus(StockConstants.TARGET_EXIT);
+				entryCandle.getTradeEntry().setTradeExitDate(candle.getMarketDate());
+				entryCandle.getTradeEntry().setTradeDuration(getNosDaysBetweenDates(entryCandle.getMarketDate(), candle.getMarketDate()));
+				entryCandle.setPnlAmount((sellPrice-targetBuyPrice)*entryCandle.getTradeEntry().getQuantity());
+				entryCandle.setTradeResult("TARGET_EXIT ON "+new SimpleDateFormat("dd-MMM-yyyy").format(candle.getMarketDate())+"|P/L|"+ entryCandle.getPnlAmount());
+				break;
+			}
+			if(candle.getLowPrice() <= stopLoss && stopLoss <=candle.getHighPrice())
+			{
+				entryCandle.setExit(true);
+				//entryCandle.setPnlAmount(-(buyPrice-stopLossPrice));
+				entryCandle.getTradeEntry().setTradeStatus(StockConstants.STOP_LOSS);
+				entryCandle.getTradeEntry().setTradeExitDate(candle.getMarketDate());
+				entryCandle.getTradeEntry().setTradeDuration(getNosDaysBetweenDates(entryCandle.getMarketDate(), candle.getMarketDate()));
+				entryCandle.setPnlAmount(((stopLoss-sellPrice)*entryCandle.getTradeEntry().getQuantity()));
 				entryCandle.setTradeResult("STOP_LOSS ON "+new SimpleDateFormat("dd-MMM-yyyy").format(candle.getMarketDate())+"|P/L|"+ entryCandle.getPnlAmount());
 				break;
 			}

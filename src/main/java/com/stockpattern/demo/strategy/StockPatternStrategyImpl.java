@@ -79,6 +79,50 @@ public class StockPatternStrategyImpl implements StockPatternStrategy {
 	
 		return stockPriceWithMA;
 	}
+
+
+
+
+	@Override
+	public List<StockPrice> backTestMovingAverageForShorting(String symbol, Date fromDate, int averageScale) {
+		
+		//Finding SMA
+		List<StockPrice>  stockPriceWithMA = prepareMovingAverageByInstrument(symbol, fromDate, averageScale);
+		
+		//Finding Support
+		stockPriceWithMA.stream().forEach(candle -> candle.setHasSupport(Indicators.hasSupport(candle, StockConstants.SUPPORT_PRICE_DIFFERENCE)));
+		
+		//Consolidating red candles with support
+		List<StockPrice>  stockPriceRedAndSupportWithMA = stockPriceWithMA.stream().filter(candle-> candle.isRedCandle() && candle.isHasSupport()).collect(Collectors.toList());
+		
+		//Finding red candle with falling MA and support
+		stockPriceRedAndSupportWithMA.forEach(candle->{
+			candle.setMARising(Utils.isFallingMAForCandle(candle, stockPriceWithMA, StockConstants.RISING_PRICE_MIN_SCALE) == true ? false : true);
+							});
+		
+		//Consolidating red candles with support and MA Falling
+		List<StockPrice>  stockPriceRedAndSupportWithMAFalling = stockPriceRedAndSupportWithMA.stream().filter(candle->!candle.isMARising()).collect(Collectors.toList());
+				
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("MMM-yyyy");
+		//Marking Entry
+		stockPriceRedAndSupportWithMAFalling.forEach(candle->{
+			
+			String month =  sdf.format(candle.getMarketDate());
+			//Buy only if monthly trade budget not exhausted
+			if(null==QuantityPlanner.monthlyTradeAmountTrackerMap.get(month) || QuantityPlanner.monthlyTradeAmountTrackerMap.get(month) < QuantityPlanner.MAX_TRADE_AMOUNT_PER_MONTH)
+			{
+				Utils.setShortEntry(candle);
+			}
+			
+		});
+		
+		List<StockPrice> withingBudgetExecutedTrades = stockPriceRedAndSupportWithMAFalling.stream().filter(c->c.isEntry()).collect(Collectors.toList());
+		
+		withingBudgetExecutedTrades.forEach(candle->Utils.setShortExit(candle, stockPriceWithMA));
+		
+		return withingBudgetExecutedTrades;
+	}
 	
 	
 	

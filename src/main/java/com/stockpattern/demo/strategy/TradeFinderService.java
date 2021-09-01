@@ -9,4 +9,5 @@ public interface TradeFinderService {
 	
 	public List<StockPrice> findTradesForMA44Rising90ForDate(Date date);
 
+	public List<StockPrice> findTradesForMARising90ForDateForVolatileStocks(Date date);
 }

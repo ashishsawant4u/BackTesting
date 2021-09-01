@@ -26,32 +26,28 @@
 	      <th scope="col">Issue Size</th>
 	      <th scope="col">Issue Price</th>
 	      <th scope="col">Listing Open</th>
+	      <th scope="col">Listing Close</th>
 	      <th scope="col">Listing Gains(%)</th>
-	      <th scope="col">Future Date</th>
-	      <th scope="col">Future Price</th>
-	      <th scope="col">Future Gains(%)</th>
+	      <th scope="col">Date after ${monthsAfterListing} months</th>
+	      <th scope="col">Price after ${monthsAfterListing} months</th>
+	      <th scope="col">Gains(%) after ${monthsAfterListing} months</th>
 	    </tr>
   </thead>
   <tbody class="searchable">
 	<c:forEach var="ipo" items="${ipoHistoricalData}">
 		<c:if test="${ipo.issueSize le 2500}">
-		
-				<c:if test="${ipo.listingOpenPrice > ipo.issuePrice}">
-					<tr class="table-success">
-				</c:if>
-				<c:if test="${ipo.listingOpenPrice < ipo.issuePrice}">
-					<tr class="table-danger">
-				</c:if>
-					<td>${ipo.symbol}</td>
+				<tr>
+					<td class="table-primary">${ipo.symbol}</td>
 					<td>${ipo.ipoName}</td>
 					<td><fmt:formatDate value="${ipo.listingDate}" pattern="dd-MMM-yyyy"/></td>
 					<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.issueSize}" /></td>
-					<td><b><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.issuePrice}" /></b></td>
-					<td><b><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.listingOpenPrice}" /></b></td>
-					<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.listingGainPecentage}" /></td>
+					<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.issuePrice}" /></td>
+					<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.listingOpenPrice}" /></td>
+					<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.listingClosePrice}" /></td>
+					<td ${ipo.listingGainPecentage > 40 ? "class='bg-success text-white'" : ""}><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.listingGainPecentage}" /></td>
 					<td><fmt:formatDate value="${ipo.futureDate}" pattern="dd-MMM-yyyy"/></td>
-					<td><b><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.futurePrice}" /></b></td>
-					<td><b><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.futureGainPecentage}" /></b></td>
+					<td><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.futurePrice}" /></td>
+					<td ${ipo.futureGainPecentage > 40 ? "class='bg-success text-white'" : ""}><fmt:formatNumber type="number" minFractionDigits="2" maxFractionDigits="2" value="${ipo.futureGainPecentage}" /></td>
 				</tr>
 		
 		
